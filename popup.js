@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 계정 연동 버튼
     document.getElementById('btnSync').addEventListener('click', handleSyncClick);
 
+    // 데이터 초기화 버튼
+    document.getElementById('btnReset').addEventListener('click', handleReset);
+
     // 수동 실행 버튼
     document.getElementById('runNowBtn').addEventListener('click', handleManualRun);
 
@@ -140,6 +143,24 @@ async function handleSyncClick() {
 function handleManualRun() {
     chrome.runtime.sendMessage({ action: "manualRun" });
     document.getElementById('statusDisplay').innerHTML = '<span style="color:#FF9500">Checking...</span>';
+}
+
+async function handleReset() {
+    const confirmed = await Modal.confirm(
+        "확장 프로그램의 모든 설정과 로그를 삭제하고,\nSKPORT/엔드필드 사이트의 로그인 정보(쿠키)도 삭제합니다.\n\n401 오류가 계속될 때 사용하세요.\n정말 초기화하시겠습니까?",
+        "데이터 초기화"
+    );
+
+    if (!confirmed) return;
+
+    chrome.runtime.sendMessage({ action: "resetData" }, async (res) => {
+        if (res && res.code === "SUCCESS") {
+            await Modal.alert("모든 데이터가 초기화되었습니다.\n사이트에 다시 로그인해주세요.", "초기화 완료");
+            location.reload();
+        } else {
+            await Modal.alert("초기화 실패", "오류");
+        }
+    });
 }
 
 // --- 렌더링 함수 ---

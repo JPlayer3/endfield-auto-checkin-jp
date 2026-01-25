@@ -5,7 +5,6 @@
   "description": "Automated daily check-in for Arknights: Endfield",
   "permissions": [
     "alarms",
-    "notifications",
     "storage",
     "cookies",
     "activeTab"

@@ -244,6 +244,12 @@ class CheckInController {
                 });
                 return true;
             }
+            else if (msg.action === "resetData") {
+                this.resetAllData().then(() => {
+                    sendResponse({ code: "SUCCESS" });
+                });
+                return true;
+            }
         });
         this.run(false);
     }
@@ -292,9 +298,27 @@ class CheckInController {
 
     clearBadge() { chrome.action.setBadgeText({ text: "" }); }
     setBadgeX() { chrome.action.setBadgeText({ text: "X" }); chrome.action.setBadgeBackgroundColor({ color: "#FF3B30" }); }
-    notify(title, msg) {
-        // [삭제] 사용자 요청으로 우측 하단 시스템 알림 기능 비활성화
-        // chrome.notifications.create({ type: "basic", iconUrl: "icon.png", title: title, message: msg, priority: 1, silent: true });
+
+    async resetAllData() {
+        // 1. 저장소 초기화
+        await chrome.storage.local.clear();
+
+        // 2. 관련 도메인 쿠키 삭제
+        for (const domain of TARGET_DOMAINS) {
+            try {
+                const cookies = await chrome.cookies.getAll({ domain: domain });
+                for (const cookie of cookies) {
+                    const protocol = cookie.secure ? "https:" : "http:";
+                    const url = `${protocol}//${cookie.domain}${cookie.path}`;
+                    await chrome.cookies.remove({ url: url, name: cookie.name, storeId: cookie.storeId });
+                }
+            } catch (e) {
+                console.error(`Failed to clear cookies for ${domain}:`, e);
+            }
+        }
+
+        // 3. 뱃지 초기화
+        this.clearBadge();
     }
 }
 
