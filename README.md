@@ -1,12 +1,27 @@
+<div align="center">
+
 # Endfield Auto Check-in
 
+[![Version](https://img.shields.io/badge/Version-1.1.3-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.1.3)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/)
+
+[![GitBook](https://img.shields.io/badge/Docs-GitBook-3884FF?style=for-the-badge&logo=gitbook&logoColor=white)](https://kgyujins-organization.gitbook.io/endfield/)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/xog9)
+
+<br/>
+
 [🇺🇸 English Version](./README_EN.md)
+
+<br/>
 
 **Arknights: Endfield (SKPORT) Daily Check-in Automation Extension**
 
 Endfield Auto Check-in은  
 명일방주: 엔드필드(SKPORT)의 일일 출석 체크를  
 **로그인된 상태에서 백그라운드로 자동 수행**하는 Chromium 기반 브라우저 확장 프로그램입니다.
+
+</div>
 
 ---
 
@@ -15,7 +30,7 @@ Endfield Auto Check-in은
 | 항목 | 내용 |
 |---|---|
 | 플랫폼 | Chrome, Edge, Whale 등 Chromium 기반 브라우저 |
-| 버전 | 1.1.1 (Invisible Mode & Smart Schedule) |
+| 버전 | 1.1.3 (Invisible Mode & Smart Schedule) |
 | 동작 조건 | SKPORT 게임 사이트 로그인 상태 필요 |
 | 실행 방식 | 로컬 브라우저 내부 자동화 |
 | 외부 통신 | 없음 |
@@ -42,7 +57,7 @@ Endfield Auto Check-in은
 
 ### Status Badge
 - 확장 아이콘을 통해 실행 결과를 직관적으로 표시  
-  - `O 또는 표시 없음` : 출석 완료  
+  - `표시 없음` : 출석 완료  
   - `X` : 로그인 필요 또는 실패
 
 ### Login Detection
