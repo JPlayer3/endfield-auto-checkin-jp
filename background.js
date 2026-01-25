@@ -48,22 +48,25 @@ class CheckInService {
         return utc8Time.toISOString().split('T')[0];
     }
 
-    async getHeaders(method, cred, role) {
+    async getHeaders(method, cred, role, cookies = []) {
         const timestamp = Math.floor(Date.now() / 1000).toString();
+        const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+
         const headers = {
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Encoding": "gzip, deflate, br, zstd",
-            "Accept-Language": "ko,ko-KR;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Origin": "https://game.skport.com",
-            "Referer": REFERER_URL,
-            "User-Agent": navigator.userAgent,
-            "Platform": "3",
-            "Vname": "1.0.0",
-            "Sk-Language": "ko",
-            "Timestamp": timestamp
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "ko,ko-KR;q=0.9,en-US;q=0.8,en;q=0.7",
+            "origin": "https://game.skport.com",
+            "referer": REFERER_URL,
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            "platform": "3",
+            "vname": "1.0.0",
+            "sk-language": "ko",
+            "timestamp": timestamp
         };
 
-        if (method === "POST") headers["Content-Type"] = "application/json";
+        if (cookieString) headers["cookie"] = cookieString;
+        if (method === "POST") headers["content-type"] = "application/json";
 
         if (!cred || !role) {
             const account = await this.store.getAccount();
@@ -113,7 +116,8 @@ class CheckInService {
 
     async fetchGameRole(cred) {
         try {
-            const headers = await this.getHeaders("GET", cred, null);
+            const cookies = await this.getAllCookies();
+            const headers = await this.getHeaders("GET", cred, null, cookies);
             const url = `${API_BINDING}?gameId=3`;
             const response = await this.fetchWithRetry(url, {
                 method: "GET", headers: headers, credentials: "include"
@@ -151,7 +155,7 @@ class CheckInService {
             }
 
             // 3. API 테스트
-            const headers = await this.getHeaders("GET", cred, role);
+            const headers = await this.getHeaders("GET", cred, role, cookies);
             const response = await this.fetchWithRetry(API_ATTEND, {
                 method: "GET", headers: headers, credentials: "include"
             });
@@ -179,8 +183,11 @@ class CheckInService {
             const account = await this.store.getAccount();
             if (!account || !account.cred) return { code: "NOT_LOGGED_IN", msg: "계정 연동 필요" };
 
+            // 쿠키 최신화 (저장된 쿠키 대신 현재 브라우저 쿠키 사용 권장)
+            const cookies = await this.getAllCookies();
+
             // 1. GET (상태 확인)
-            const getHeaders = await this.getHeaders("GET", account.cred, account.role);
+            const getHeaders = await this.getHeaders("GET", account.cred, account.role, cookies);
             const getRes = await this.fetchWithRetry(API_ATTEND, {
                 method: "GET", headers: getHeaders, credentials: "include"
             });
@@ -191,7 +198,7 @@ class CheckInService {
             }
 
             // 2. POST (출석)
-            const postHeaders = await this.getHeaders("POST", account.cred, account.role);
+            const postHeaders = await this.getHeaders("POST", account.cred, account.role, cookies);
             const postRes = await this.fetchWithRetry(API_ATTEND, {
                 method: "POST", headers: postHeaders, credentials: "include", body: JSON.stringify({})
             });
