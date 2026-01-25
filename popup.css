@@ -211,6 +211,10 @@ input:checked+.slider:before {
     flex-direction: column;
     gap: 4px;
     align-items: flex-end;
+    flex-shrink: 0;
+    /* [중요] 텍스트가 길어져도 버튼 영역 줄어들지 않음 */
+    margin-left: 12px;
+    /* 텍스트와 간격 확보 */
 }
 
 .btn-danger {
@@ -253,6 +257,12 @@ input:checked+.slider:before {
     font-weight: 600;
     text-align: left;
     line-height: 1.4;
+    flex: 1;
+    /* 남은 공간 차지 */
+    word-break: keep-all;
+    /* 단어 단위 줄바꿈 */
+    min-width: 0;
+    /* Flexbox 텍스트 오버플로우 방지 */
 }
 
 .log-list {

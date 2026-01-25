@@ -36,6 +36,11 @@
             </div>
             <button id="runNowBtn" class="btn-primary full-width">CHECK NOW</button>
             <a href="https://game.skport.com/endfield/sign-in" target="_blank" class="site-link">출석 사이트 바로가기 ↗</a>
+            
+            <!-- 실패 시에만 표시될 버그 제보 버튼 -->
+            <button id="btnMainBugReport" class="btn-text" style="display: none; width: 100%; color: #FF3B30;">
+                ⚠️ 문제 해결이 안 되나요? 버그 제보하기
+            </button>
         </div>
 
         <div id="settingsView" style="display: none;">
@@ -46,7 +51,7 @@
                 <div class="btn-group-col">
                     <button id="btnSync" class="btn-primary small">계정 연동 갱신</button>
                     <button id="btnUnlink" class="btn-danger">연동 해제</button>
-                    <button id="btnReset" class="btn-danger" style="color:#FF3B30; border:1px solid rgba(255, 59, 48, 0.3); border-radius:4px; margin-top:12px;">데이터 초기화 (오류 해결)</button>
+                    <button id="btnReset" class="btn-danger" style="color:#FF3B30; border:1px solid rgba(255, 59, 48, 0.3); border-radius:4px; margin-top:12px;">데이터 초기화<br>(오류 해결)</button>
                 </div>
             </div>
 
@@ -67,6 +72,26 @@
             <div class="modal-buttons">
                 <button id="modalBtnCancel" class="modal-btn secondary">취소</button>
                 <button id="modalBtnOk" class="modal-btn primary">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bug Report Modal -->
+    <div id="bugReportModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-title">버그 제보</div>
+            <div class="modal-message" style="text-align: left; font-size: 13px; color: #ccc;">
+                오류 로그와 환경 정보가 자동으로 첨부됩니다.
+            </div>
+            
+            <!-- 이메일 수동 입력 -->
+            <input type="email" id="bugReportEmail" style="width: 100%; margin-top: 10px; box-sizing: border-box; background: #333; border: 1px solid #555; color: white; border-radius: 4px; padding: 8px; font-family: sans-serif;" placeholder="답변 받을 이메일 (필수)">
+
+            <textarea id="bugReportMsg" style="width: 100%; height: 80px; margin: 10px 0; box-sizing: border-box; background: #333; border: 1px solid #555; color: white; border-radius: 4px; padding: 8px; font-family: sans-serif; resize: none;" placeholder="추가 내용 (예: '로그인 후 버튼이 안 눌려요')"></textarea>
+            
+            <div class="modal-buttons">
+                <button id="btnBugCancel" class="modal-btn secondary">취소</button>
+                <button id="btnBugSend" class="modal-btn primary">보내기</button>
             </div>
         </div>
     </div>
