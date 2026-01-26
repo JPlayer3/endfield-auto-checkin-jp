@@ -4,16 +4,15 @@ chrome.storage.local.get(['accountInfo'], (data) => {
     showSyncPrompt();
 });
 
-// [핵심 추가] popup.js의 요청을 듣는 리스너 (이게 없어서 실패했던 것임)
+// popup.js의 요청을 듣는 리스너
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "getLocalStorage") {
         const data = scanForAccountData();
-        // 비동기 응답을 위해 true 리턴이 필요할 수 있으나, 동기 처리로 충분함
         sendResponse(data);
     }
 });
 
-// [기능 강화] 정밀 데이터 탐색 함수 (단순 키 조회 -> 패턴 매칭으로 변경)
+// 정밀 데이터 탐색 함수
 function scanForAccountData() {
     let cred = null;
     let role = null;
@@ -96,7 +95,7 @@ function showSyncPrompt() {
 
     document.body.appendChild(div);
 
-    // [수정] 안전한 메시지 전송
+    // 안전한 메시지 전송
     document.getElementById('btn-sync-yes').addEventListener('click', async () => {
         if (!chrome.runtime?.id) {
             await showModal("연결 끊김", "확장 프로그램이 업데이트되었습니다.\n페이지를 새로고침 해주세요.", false);
