@@ -63,6 +63,17 @@ header {
     cursor: pointer;
     padding: 4px;
     transition: color 0.2s;
+    display: flex;
+    /* [중요] 아이콘 정렬 및 찌그러짐 방지 */
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon-btn svg {
+    display: block;
+    width: 20px;
+    height: 20px;
 }
 
 .icon-btn:hover {

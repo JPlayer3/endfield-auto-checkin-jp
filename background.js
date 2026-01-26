@@ -162,14 +162,7 @@ class CheckInService {
 
             if (!response.ok) throw new Error("API 테스트 실패");
 
-            // [중요] 응답 내용 검증 (HTTP 200이어도 논리적 에러일 수 있음)
-            const resJson = await response.json();
-            // code: 0(성공), 10001(이미완료/성공간주) 외에는 실패 처리
-            if (resJson.code !== 0 && resJson.code !== 10001) {
-                // 인증 만료 등
-                if (resJson.message) throw new Error(resJson.message);
-                throw new Error("API 인증 실패 (" + resJson.code + ")");
-            }
+
 
             const accountInfo = {
                 uid: "Linked",

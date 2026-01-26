@@ -11,8 +11,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. 이벤트 리스너
     document.getElementById('btnSettings').addEventListener('click', () => {
-        document.getElementById('mainView').style.display = 'none';
-        document.getElementById('settingsView').style.display = 'flex';
+        const settingsView = document.getElementById('settingsView');
+        const mainView = document.getElementById('mainView');
+
+        if (settingsView.style.display === 'flex') {
+            settingsView.style.display = 'none';
+            mainView.style.display = 'flex';
+        } else {
+            mainView.style.display = 'none';
+            settingsView.style.display = 'flex';
+        }
     });
 
     document.getElementById('btnBack').addEventListener('click', () => {
