@@ -2,7 +2,7 @@
 
 # Endfield Auto Check-in
 
-[![Version](https://img.shields.io/badge/Version-1.2.1-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.2.1)
+[![Version](https://img.shields.io/badge/Version-1.2.2-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.2.2)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/)
 
@@ -30,7 +30,7 @@ automatically performs the daily check-in for
 | Item | Description |
 |---|---|
 | Platform | Chromium-based browsers (Chrome, Edge, Whale, etc.) |
-| Version | 1.2.1 |
+| Version | 1.2.2 |
 | Requirement | User must be logged in to the SKPORT website |
 | Execution | Local browser automation |
 | External Network | None |
@@ -50,6 +50,11 @@ automatically performs the daily check-in for
 ### Account Info Display
 - Displays Role ID and Server ID when account is linked
 - Information shown below the "Linked" status
+
+### Discord Notification
+- Send check-in results via Discord Webhook
+- Includes webhook testing functionality
+- Easy integration using Webhook URL
 
 ### Instant Check-in on Sync
 - Automatically triggers check-in immediately after successful account sync

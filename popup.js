@@ -66,26 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 수동 실행 버튼
     document.getElementById('runNowBtn').addEventListener('click', handleManualRun);
 
-    // 메인 화면 버그 제보 버튼 (실패 시 표시)
-    document.getElementById('btnMainBugReport').addEventListener('click', handleBugReport);
 
-    // 버그 제보 모달 버튼
-    document.getElementById('btnBugCancel').addEventListener('click', () => {
-        document.getElementById('bugReportModal').style.display = 'none';
-    });
-
-    document.getElementById('btnBugSend').addEventListener('click', async () => {
-        const btn = document.getElementById('btnBugSend');
-        const originalText = btn.innerText;
-        btn.innerText = "전송 중...";
-        btn.disabled = true;
-
-        await processBugReport();
-
-        btn.innerText = originalText;
-        btn.disabled = false;
-        document.getElementById('bugReportModal').style.display = 'none';
-    });
 
     // Discord event listeners
     document.getElementById('btnSaveWebhook').addEventListener('click', handleSaveWebhook);
@@ -221,82 +202,7 @@ function handleManualRun() {
     document.getElementById('statusDisplay').innerHTML = '<span style="color:#FF9500">Checking...</span>';
 }
 
-async function handleBugReport() {
-    document.getElementById('bugReportModal').style.display = 'flex';
-}
 
-async function processBugReport() {
-    try {
-        // 1. 정보 수집
-        const manifest = chrome.runtime.getManifest();
-        const userAgent = navigator.userAgent;
-        const platformInfo = await new Promise(r => chrome.runtime.getPlatformInfo ? chrome.runtime.getPlatformInfo(r) : r({ os: "unknown", arch: "unknown" }));
-
-        const data = await storage.get(null);
-        let logsText = "";
-        if (data.checkInLogs && data.checkInLogs.length > 0) {
-            logsText = data.checkInLogs.map(l => `[${l.date}] ${l.status}: ${l.msg}`).join('\n');
-        } else {
-            logsText = "No logs available.";
-        }
-
-        const maskedData = JSON.stringify(data, (key, value) => {
-            if (key === 'accountInfo' && value) {
-                // cred 마스킹, role(ID/Server) 정보 제외
-                return {
-                    ...value,
-                    cred: value.cred ? value.cred.substring(0, 5) + "***" : null,
-                    role: undefined
-                };
-            }
-            return value;
-        }, 2);
-
-        // 3. 구글 폼 연결
-        // [설정] 버그 제보를 받을 구글 폼 주소를 입력하세요.
-        const GOOGLE_FORM_URL = "https://forms.gle/57Vafx5ffwSZ4J4NA";
-
-        // 한국 시간 (KST)
-        const kstTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', hour12: false });
-
-        // 2. 리포트 포맷 정리 (텍스트 형식, 대괄호 사용)
-        const reportBody = `
-[버그 리포트]
-Date (KST): ${kstTime}
-
-----------------------------------------
-
-[환경 정보]
-App Version: ${manifest.version}
-Extension ID: ${chrome.runtime.id}
-OS: ${platformInfo.os} (${platformInfo.arch})
-Browser: ${userAgent}
-
-----------------------------------------
-
-[오류 로그]
-${logsText}
-
-[스토리지 데이터 (Masked)]
-${maskedData}
-`.trim();
-
-        // 클립보드 복사
-        await navigator.clipboard.writeText(reportBody);
-
-        if (GOOGLE_FORM_URL) {
-            chrome.tabs.create({ url: GOOGLE_FORM_URL });
-            alert("✅ 로그가 클립보드에 복사되었습니다!\n\n새로 열린 구글 폼의 '내용' 란에 붙여넣기(Ctrl+V) 해주세요.");
-        } else {
-            // URL 미설정 시 백업 안내
-            alert("⚠️ 구글 폼 링크가 설정되지 않았습니다.\n\n로그 내용이 클립보드에 복사되었습니다.\n개발자에게 전달해주세요.");
-        }
-
-    } catch (err) {
-        console.error(err);
-        alert("오류 발생: " + err.message);
-    }
-}
 
 async function handleReset() {
     const confirmed = await Modal.confirm(
@@ -328,7 +234,7 @@ function renderStatus(data) {
         // OFF 상태일 때 주요 버튼 숨김
         document.getElementById('btnSettings').style.display = 'none';
         document.getElementById('runNowBtn').style.display = 'none';
-        document.getElementById('btnMainBugReport').style.display = 'none';
+
         return;
     }
 
@@ -338,14 +244,13 @@ function renderStatus(data) {
 
     if (data.lastStatus === "SUCCESS") {
         statusEl.innerHTML = '<span style="color:#34C759">완료</span>';
-        document.getElementById('btnMainBugReport').style.display = 'none';
+
     } else if (data.lastStatus === "FAIL" || data.lastStatus === "NOT_LOGGED_IN") {
         statusEl.innerHTML = '<span style="color:#FF3B30">실패</span>';
-        // 실패 시 메인 화면에도 버그 제보 버튼 표시
-        document.getElementById('btnMainBugReport').style.display = 'block';
+
     } else {
         statusEl.innerHTML = '<span style="color:#FF9500">대기 중</span>';
-        document.getElementById('btnMainBugReport').style.display = 'none';
+
     }
 
     timeEl.innerText = data.lastCheckTime ? `마지막 실행: ${data.lastCheckTime}` : "마지막 실행: -";

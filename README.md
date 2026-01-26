@@ -2,7 +2,7 @@
 
 # Endfield Auto Check-in
 
-[![Version](https://img.shields.io/badge/Version-1.2.1-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.2.1)
+[![Version](https://img.shields.io/badge/Version-1.2.2-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.2.2)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/)
 
@@ -39,7 +39,7 @@ Endfield Auto Check-in은
 | 항목 | 내용 |
 |---|---|
 | 플랫폼 | Chrome, Edge, Whale 등 Chromium 기반 브라우저 |
-| 버전 | 1.2.1 |
+| 버전 | 1.2.2 |
 | 동작 조건 | SKPORT 게임 사이트 로그인 상태 필요 |
 | 실행 방식 | 로컬 브라우저 내부 자동화 |
 | 외부 통신 | 없음 |
@@ -59,6 +59,11 @@ Endfield Auto Check-in은
 ### Account Info Display
 - 계정 연동 시 Role ID와 서버 정보 표시
 - "Linked" 상태 아래에 계정 정보 확인 가능
+
+### Discord Notification
+- 출석 성공 여부를 디스코드 웹훅으로 알림
+- 웹훅 동작 테스트 기능 제공
+- 웹훅 URL 설정으로 간편한 연동
 
 ### Instant Check-in on Sync
 - 계정 연동(갱신) 성공 시 즉시 출석 체크 시도
