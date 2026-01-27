@@ -1,12 +1,28 @@
 const storage = chrome.storage.local;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    await i18n.init();
+    applyI18n();
+
     const data = await storage.get(['lastStatus', 'lastCheckDate', 'lastCheckTime', 'accountInfo', 'checkInLogs', 'isRunning', 'discordConfig']);
 
     renderStatus(data);
     renderLogs(data.checkInLogs);
     renderAccountInfo(data.accountInfo);
     renderDiscordConfig(data.discordConfig);
+
+    document.getElementById('btnLang').addEventListener('click', async () => {
+        const current = i18n.lang;
+        const next = current === 'ko' ? 'en' : 'ko';
+        await i18n.setLanguage(next);
+        applyI18n();
+        storage.get(['lastStatus', 'lastCheckTime', 'accountInfo', 'checkInLogs', 'discordConfig'], (d) => {
+            renderStatus(d);
+            renderLogs(d.checkInLogs);
+            renderAccountInfo(d.accountInfo);
+            renderDiscordConfig(d.discordConfig);
+        });
+    });
 
     document.getElementById('btnSettings').addEventListener('click', () => {
         const settingsView = document.getElementById('settingsView');
@@ -61,8 +77,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('btnWebhookHelp').addEventListener('click', async () => {
         await Modal.alert(
-            "1. 디스코드 서버 → 서버 설정 → 연동\n2. 웹후크 → 새 웹후크\n3. 웹후크 URL 복사 → 위에 붙여넣기",
-            "웹훅 URL 얻는 방법"
+            i18n.get('msg_webhook_help'),
+            i18n.get('btn_webhook_help')
         );
     });
 
@@ -98,11 +114,11 @@ class Modal {
 
             if (isConfirm) {
                 this.btnCancel.style.display = 'block';
-                this.btnOk.innerText = '네';
-                this.btnCancel.innerText = '아니오';
+                this.btnOk.innerText = i18n.get('btn_yes');
+                this.btnCancel.innerText = i18n.get('btn_no');
             } else {
                 this.btnCancel.style.display = 'none';
-                this.btnOk.innerText = '확인';
+                this.btnOk.innerText = i18n.get('btn_ok');
             }
 
             this.overlay.classList.add('active');
@@ -117,12 +133,12 @@ class Modal {
         }
     }
 
-    static async alert(msg, title = "알림") {
-        return await this.show(title, msg, false);
+    static async alert(msg, title = null) {
+        return await this.show(title || i18n.get('modal_alert_title'), msg, false);
     }
 
-    static async confirm(msg, title = "확인") {
-        return await this.show(title, msg, true);
+    static async confirm(msg, title = null) {
+        return await this.show(title || i18n.get('modal_confirm_title'), msg, true);
     }
 }
 
@@ -130,60 +146,77 @@ Modal.init();
 
 async function handleSyncClick() {
     const btn = document.getElementById('btnSync');
-    btn.innerText = "분석 중...";
+    btn.innerText = i18n.get('msg_sync_analyzing');
     btn.disabled = true;
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     if (!tab || !tab.url || !tab.url.includes("skport.com")) {
-        await Modal.alert("SKPORT 엔드필드 출석체크 페이지에서 실행해주세요.");
-        btn.innerText = "계정 연동 갱신";
+        await Modal.alert(i18n.get('msg_req_login'));
+        btn.innerText = i18n.get('btn_sync_refresh');
         btn.disabled = false;
         return;
     }
 
     chrome.tabs.sendMessage(tab.id, { action: "getLocalStorage" }, (response) => {
+        if (chrome.runtime.lastError) {
+            console.log("Tab message error:", chrome.runtime.lastError.message);
+        }
         const storageData = response || {};
 
         chrome.runtime.sendMessage({
             action: "syncAccount",
             storageData: storageData
         }, async (res) => {
-            btn.innerText = "계정 연동 갱신";
+            if (chrome.runtime.lastError) {
+                await Modal.alert("Error: " + chrome.runtime.lastError.message);
+                btn.innerText = i18n.get('btn_sync_refresh');
+                btn.disabled = false;
+                return;
+            }
+            btn.innerText = i18n.get('btn_sync_refresh');
             btn.disabled = false;
 
             if (res && res.code === "SUCCESS") {
                 renderAccountInfo(res.data);
                 storage.get(['checkInLogs'], (d) => renderLogs(d.checkInLogs));
-                await Modal.alert("연동 완료! 모든 인증 정보가 안전하게 저장되었습니다.", "성공");
+                await Modal.alert(i18n.get('msg_sync_success'), i18n.get('modal_success_title'));
             } else {
-                await Modal.alert("연동 실패: " + (res ? res.msg : "알 수 없는 오류"), "오류");
+                await Modal.alert(i18n.get('msg_sync_fail') + (res ? res.msg : "Unknown Error"), i18n.get('modal_error_title'));
             }
         });
     });
 }
 
 function handleManualRun() {
-    chrome.runtime.sendMessage({ action: "manualRun" });
-    document.getElementById('statusDisplay').innerHTML = '<span style="color:#FF9500">Checking...</span>';
+    chrome.runtime.sendMessage({ action: "manualRun" }, (res) => {
+        if (chrome.runtime.lastError) {
+            console.error("Manual Run Error:", chrome.runtime.lastError);
+        }
+    });
+    document.getElementById('statusDisplay').innerHTML = `<span style="color:#FF9500">${i18n.get('status_checking')}</span>`;
 }
 
 
 
 async function handleReset() {
     const confirmed = await Modal.confirm(
-        "확장 프로그램의 모든 설정과 로그를 삭제하고,\nSKPORT/엔드필드 사이트의 로그인 정보(쿠키)도 삭제합니다.\n\n401 오류가 계속될 때 사용하세요.\n정말 초기화하시겠습니까?",
-        "데이터 초기화"
+        i18n.get('msg_reset_confirm'),
+        i18n.get('modal_reset_title')
     );
 
     if (!confirmed) return;
 
     chrome.runtime.sendMessage({ action: "resetData" }, async (res) => {
+        if (chrome.runtime.lastError) {
+            await Modal.alert("Error: " + chrome.runtime.lastError.message);
+            return;
+        }
         if (res && res.code === "SUCCESS") {
-            await Modal.alert("모든 데이터가 초기화되었습니다.\n사이트에 다시 로그인해주세요.", "초기화 완료");
+            await Modal.alert(i18n.get('msg_reset_done'), i18n.get('modal_reset_title'));
             location.reload();
         } else {
-            await Modal.alert("초기화 실패", "오류");
+            await Modal.alert("Reset Failed", i18n.get('modal_error_title'));
         }
     });
 }
@@ -196,17 +229,17 @@ function renderStatus(data) {
     document.getElementById('runNowBtn').style.display = '';
 
     if (data.lastStatus === "SUCCESS") {
-        statusEl.innerHTML = '<span style="color:#34C759">완료</span>';
+        statusEl.innerHTML = `<span style="color:#34C759">${i18n.get('status_success')}</span>`;
 
     } else if (data.lastStatus === "FAIL" || data.lastStatus === "NOT_LOGGED_IN") {
-        statusEl.innerHTML = '<span style="color:#FF3B30">실패</span>';
+        statusEl.innerHTML = `<span style="color:#FF3B30">${i18n.get('status_fail')}</span>`;
 
     } else {
-        statusEl.innerHTML = '<span style="color:#FF9500">대기 중</span>';
+        statusEl.innerHTML = `<span style="color:#FF9500">${i18n.get('status_waiting')}</span>`;
 
     }
 
-    timeEl.innerText = data.lastCheckTime ? `마지막 실행: ${data.lastCheckTime}` : "마지막 실행: -";
+    timeEl.innerText = data.lastCheckTime ? `${i18n.get('last_run_prefix')}${data.lastCheckTime}` : `${i18n.get('last_run_prefix')}-`;
 }
 
 function renderLogs(logs) {
@@ -214,19 +247,23 @@ function renderLogs(logs) {
     list.innerHTML = "";
 
     if (!logs || logs.length === 0) {
-        list.innerHTML = "<div style='text-align:center; color:#666; padding:10px;'>기록 없음</div>";
+        list.innerHTML = `<div style='text-align:center; color:#666; padding:10px;'>${i18n.get('msg_no_logs')}</div>`;
         return;
     }
 
     logs.forEach(log => {
         const div = document.createElement('div');
         div.className = "log-item";
+        let statusText = log.status;
+        if (log.status === 'SUCCESS') statusText = i18n.get('status_success');
+        else if (log.status === 'FAIL') statusText = i18n.get('status_fail');
+
         div.innerHTML = `
             <div>
                 <div class="log-date">${log.date}</div>
                 <div class="log-msg">${log.msg}</div>
             </div>
-            <div class="log-status ${log.status}">${log.status}</div>
+            <div class="log-status ${log.status}">${statusText}</div>
         `;
         list.appendChild(div);
     });
@@ -241,12 +278,16 @@ function renderAccountInfo(info) {
     btnUnlink.parentNode.replaceChild(newBtnUnlink, btnUnlink);
 
     newBtnUnlink.addEventListener('click', async () => {
-        const confirmed = await Modal.confirm("정말 계정 연동을 해제하시겠습니까?\n자동 출석이 중단됩니다.");
+        const confirmed = await Modal.confirm(i18n.get('msg_unlink_confirm'));
         if (!confirmed) return;
 
         chrome.runtime.sendMessage({ action: "logout" }, async (res) => {
+            if (chrome.runtime.lastError) {
+                await Modal.alert("Error: " + chrome.runtime.lastError.message);
+                return;
+            }
             if (res && res.code === "SUCCESS") {
-                await Modal.alert("연동이 해제되었습니다.");
+                await Modal.alert(i18n.get('msg_unlinked'));
                 renderAccountInfo(null);
                 storage.get(['checkInLogs'], (d) => renderLogs(d.checkInLogs));
             }
@@ -269,12 +310,12 @@ function renderAccountInfo(info) {
             }
         }
 
-        el.innerHTML = `연동됨 <span style="color:#34C759">●</span>${accountInfoText}<br><span style="font-size:10px;color:#888; font-weight:400">최근: ${info.lastSync}</span>`;
-        btnSync.innerText = "연동 갱신";
+        el.innerHTML = `${i18n.get('info_linked')} <span style="color:#34C759">●</span>${accountInfoText}<br><span style="font-size:10px;color:#888; font-weight:400">${i18n.get('last_edit')}${info.lastSync}</span>`;
+        btnSync.innerText = i18n.get('btn_sync_refresh');
         newBtnUnlink.style.display = "block";
     } else {
-        el.innerHTML = `연동 안됨 <span style="color:#FF3B30">●</span><br><span style="font-size:10px;color:#888; font-weight:400">캐릭터 ID 정보를 찾을 수 없습니다.<br>로그아웃 후 재로그인하고 다시 진행해주세요</span>`;
-        btnSync.innerText = "계정 연동하기";
+        el.innerHTML = `${i18n.get('info_not_linked')} <span style="color:#FF3B30">●</span><br><span style="font-size:10px;color:#888; font-weight:400">${i18n.get('info_msg_not_found')}</span>`;
+        btnSync.innerText = i18n.get('btn_sync_start');
         newBtnUnlink.style.display = "none";
     }
 }
@@ -283,16 +324,15 @@ async function handleSaveWebhook() {
     const webhookUrl = document.getElementById('webhookUrl').value.trim();
 
     if (!webhookUrl) {
-        // Clear configuration to disable
         const config = { webhookUrl: "" };
         await storage.set({ discordConfig: config });
-        await Modal.alert("디스코드 연동이 비활성화되었습니다.", "알림");
+        await Modal.alert(i18n.get('msg_webhook_disabled'), i18n.get('modal_alert_title'));
         renderDiscordConfig(config);
         return;
     }
 
     if (!webhookUrl.startsWith('https://discord.com/api/webhooks/') && !webhookUrl.startsWith('https://discordapp.com/api/webhooks/')) {
-        await Modal.alert("올바른 디스코드 웹훅 URL이 아닙니다.", "오류");
+        await Modal.alert(i18n.get('msg_webhook_invalid'), i18n.get('modal_error_title'));
         return;
     }
 
@@ -302,7 +342,7 @@ async function handleSaveWebhook() {
     };
 
     await storage.set({ discordConfig: config });
-    await Modal.alert("디스코드 웹훅이 저장되었습니다!", "성공");
+    await Modal.alert(i18n.get('msg_webhook_saved'), i18n.get('modal_success_title'));
     renderDiscordConfig(config);
 }
 
@@ -312,7 +352,7 @@ async function handleTestWebhook() {
     const webhookUrl = document.getElementById('webhookUrl').value.trim();
 
     if (!webhookUrl) {
-        await Modal.alert("먼저 웹훅 URL을 입력하고 저장해주세요.", "오류");
+        await Modal.alert(i18n.get('msg_webhook_req_save'), i18n.get('modal_error_title'));
         return;
     }
 
@@ -324,7 +364,7 @@ async function handleTestWebhook() {
 
     const btn = document.getElementById('btnTestWebhook');
     const originalText = btn.innerText;
-    btn.innerText = "전송 중...";
+    btn.innerText = i18n.get('msg_test_sending');
     btn.disabled = true;
 
     try {
@@ -339,13 +379,13 @@ async function handleTestWebhook() {
         });
 
         if (response.ok) {
-            await Modal.alert("테스트 메시지가 성공적으로 전송되었습니다!\n디스코드 채널을 확인해보세요.", "성공");
+            await Modal.alert(i18n.get('msg_test_success'), i18n.get('modal_success_title'));
         } else {
             const errorText = await response.text();
-            await Modal.alert(`전송 실패: ${response.status} ${response.statusText}\n${errorText}`, "오류");
+            await Modal.alert(i18n.get('msg_test_fail') + `${response.status} ${response.statusText}\n${errorText}`, i18n.get('modal_error_title'));
         }
     } catch (error) {
-        await Modal.alert(`전송 중 오류 발생: ${error.message}`, "오류");
+        await Modal.alert(i18n.get('msg_test_fail') + error.message, i18n.get('modal_error_title'));
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
@@ -361,14 +401,14 @@ function showTestTypeModal() {
 
         modalOverlay.innerHTML = `
             <div class="modal-container">
-                <div class="modal-title">테스트 메시지 유형 선택</div>
+                <div class="modal-title">${i18n.get('test_modal_title')}</div>
                 <div class="modal-message" style="text-align: left;">
-                    <button id="tempTestSuccess" class="btn-primary full-width" style="margin-bottom: 8px;">✅ 출석 성공</button>
-                    <button id="tempTestAlready" class="btn-primary full-width" style="margin-bottom: 8px; background: rgba(52, 112, 219, 0.3); color: #3498db;">ℹ️ 이미 완료됨</button>
-                    <button id="tempTestFail" class="btn-primary full-width" style="margin-bottom: 8px; background: rgba(255, 59, 48, 0.3); color: #FF3B30;">❌ 출석 실패</button>
+                    <button id="tempTestSuccess" class="btn-primary full-width" style="margin-bottom: 8px;">${i18n.get('test_btn_success')}</button>
+                    <button id="tempTestAlready" class="btn-primary full-width" style="margin-bottom: 8px; background: rgba(52, 112, 219, 0.3); color: #3498db;">${i18n.get('test_btn_already')}</button>
+                    <button id="tempTestFail" class="btn-primary full-width" style="margin-bottom: 8px; background: rgba(255, 59, 48, 0.3); color: #FF3B30;">${i18n.get('test_btn_fail')}</button>
                 </div>
                 <div class="modal-buttons">
-                    <button class="modal-btn secondary" id="tempTestCancel">취소</button>
+                    <button class="modal-btn secondary" id="tempTestCancel">${i18n.get('btn_cancel')}</button>
                 </div>
             </div>
         `;
@@ -404,15 +444,14 @@ function createTestEmbed(type, accountInfo) {
     const footerText = (accountInfo && accountInfo.uid)
         ? `UID: ${accountInfo.uid}`
         : "Endfield Auto Check-in";
-
     if (type === 'SUCCESS') {
         return {
-            title: "[테스트] 🎉 엔드필드 출석 체크 완료!",
+            title: i18n.get('embed_test_success_title'),
             color: 13883715,
             fields: [
-                { name: "📅 일시", value: dateTimeStr, inline: false },
-                { name: "📊 누적 출석", value: `${randomDays}일`, inline: true },
-                { name: "🎁 오늘의 보상", value: "테스트 아이템 x1", inline: true }
+                { name: i18n.get('field_date'), value: dateTimeStr, inline: false },
+                { name: i18n.get('field_accumulated'), value: `${randomDays}${i18n.get('val_days')}`, inline: true },
+                { name: i18n.get('field_reward'), value: `${i18n.get('val_test_item')} x1`, inline: true }
             ],
             thumbnail: {
                 url: "https://img.icons8.com/color/96/gift--v1.png"
@@ -422,22 +461,22 @@ function createTestEmbed(type, accountInfo) {
         };
     } else if (type === 'ALREADY_DONE') {
         return {
-            title: "[테스트] ✅ 출석 체크 이미 완료됨",
+            title: i18n.get('embed_test_already_title'),
             color: 3447003,
             fields: [
-                { name: "📅 일시", value: dateTimeStr, inline: false },
-                { name: "ℹ️ 상태", value: "오늘 출석 체크가 이미 완료되었습니다.", inline: false }
+                { name: i18n.get('field_date'), value: dateTimeStr, inline: false },
+                { name: i18n.get('field_status'), value: i18n.get('val_already_msg'), inline: false }
             ],
             footer: { text: footerText },
             timestamp: now.toISOString()
         };
     } else {
         return {
-            title: "[테스트] ⚠️ 엔드필드 출석 체크 실패",
+            title: i18n.get('embed_test_fail_title'),
             color: 16711680,
             fields: [
-                { name: "📅 일시", value: dateTimeStr, inline: false },
-                { name: "❌ 오류 내용", value: "테스트 오류 메시지입니다.", inline: false }
+                { name: i18n.get('field_date'), value: dateTimeStr, inline: false },
+                { name: i18n.get('field_error'), value: i18n.get('val_test_error'), inline: false }
             ],
             footer: { text: footerText },
             timestamp: now.toISOString()
@@ -453,18 +492,33 @@ function renderDiscordConfig(config) {
         webhookUrlInput.value = config.webhookUrl || '';
 
         if (config.webhookUrl) {
-            const status = '활성화됨';
+            const status = i18n.get('status_active');
             const color = '#34C759';
-            statusDiv.innerHTML = `<span style="color:${color}">●</span> ${status}<br><span style="font-size:10px; color:#888;">최근 수정: ${config.lastSync || '-'}</span>`;
+            statusDiv.innerHTML = `<span style="color:${color}">●</span> ${status}<br><span style="font-size:10px; color:#888;">${i18n.get('last_edit')}${config.lastSync || '-'}</span>`;
         } else {
-            const status = '비활성화됨';
-            const color = '#888'; // Grey
+            const status = i18n.get('status_disabled');
+            const color = '#888';
             statusDiv.innerHTML = `<span style="color:${color}">●</span> ${status}`;
         }
     } else {
         webhookUrlInput.value = '';
-        const status = '비활성화됨';
+        const status = i18n.get('status_not_set');
         const color = '#888';
         statusDiv.innerHTML = `<span style="color:${color}">●</span> ${status}`;
     }
+}
+
+function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.innerText = i18n.get(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.title = i18n.get(el.dataset.i18nTitle);
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        el.innerHTML = i18n.get(el.dataset.i18nHtml);
+    });
+
+    const btnLang = document.getElementById('btnLang');
+    if (btnLang) btnLang.innerText = i18n.lang.toUpperCase();
 }

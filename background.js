@@ -1,3 +1,5 @@
+importScripts('i18n.js');
+
 const TARGET_DOMAINS = ["skport.com", "game.skport.com", "gryphline.com"];
 const ALARM_NAME = "dailyCheckIn";
 
@@ -12,7 +14,7 @@ class AccountStore {
 
     async addLog(status, message) {
         let logs = (await this.get('checkInLogs')) || [];
-        const now = new Date().toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+        const now = new Date().toLocaleString(i18n.locale, { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
         logs.unshift({ date: now, status: status, msg: message });
         if (logs.length > 50) logs = logs.slice(0, 50);
         await this.set('checkInLogs', logs);
@@ -47,7 +49,7 @@ class AccountStore {
 
     async addDiscordLog(status, message) {
         let logs = (await this.get('discordLogs')) || [];
-        const now = new Date().toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+        const now = new Date().toLocaleString(i18n.locale, { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
         logs.unshift({ date: now, status: status, msg: message });
         if (logs.length > 20) logs = logs.slice(0, 20);
         await this.set('discordLogs', logs);
@@ -69,7 +71,7 @@ class AccountStore {
             if (newCookies) {
                 info.cookies = newCookies;
             }
-            info.lastSync = new Date().toLocaleString('ko-KR');
+            info.lastSync = new Date().toLocaleString(i18n.locale);
             await this.saveAccount(info);
             return true;
         }
@@ -87,15 +89,20 @@ class CheckInService {
     }
 
     async getHeaders(cred, role) {
+        const langHeader = i18n.lang === 'en'
+            ? "en-US,en;q=0.9,ko-KR;q=0.8,ko;q=0.7"
+            : "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7";
+        const skLang = i18n.lang === 'en' ? 'en' : 'ko';
+
         const headers = {
             "accept": "application/json, text/plain, */*",
             "accept-encoding": "gzip, deflate, br, zstd",
-            "accept-language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+            "accept-language": langHeader,
             "origin": "https://game.skport.com",
             "referer": "https://game.skport.com/",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "platform": "3",
-            "sk-language": "ko"
+            "sk-language": skLang
         };
 
         if (cred) headers["cred"] = cred;
@@ -156,7 +163,6 @@ class CheckInService {
                 headers: await this.getHeaders(cred, null)
             });
         } catch (e) {
-            // Ignore errors for keep-alive
         }
     }
 
@@ -183,7 +189,7 @@ class CheckInService {
                 cred: cred,
                 role: roleData.roleValue,
                 cookies: cookies,
-                lastSync: new Date().toLocaleString('ko-KR')
+                lastSync: new Date().toLocaleString(i18n.locale)
             };
 
             await this.store.saveAccount(accountInfo);
@@ -197,7 +203,7 @@ class CheckInService {
     async executeAttendance() {
         try {
             const account = await this.store.getAccount();
-            if (!account || !account.cred) return { code: "NOT_LOGGED_IN", msg: "계정 연동 필요" };
+            if (!account || !account.cred) return { code: "NOT_LOGGED_IN", msg: i18n.get('log_req_login') };
 
             await this.refreshSession(account.cred);
 
@@ -213,7 +219,7 @@ class CheckInService {
             }
 
             if (!role) {
-                return { code: "FAIL", msg: "Character binding not found." };
+                return { code: "FAIL", msg: i18n.get('log_char_not_found') };
             }
 
             const url = "https://zonai.skport.com/web/v1/game/endfield/attendance";
@@ -224,7 +230,7 @@ class CheckInService {
             const checkData = await checkRes.json();
 
             if (checkData.code === 0 && checkData.data?.hasToday) {
-                return { code: "ALREADY_DONE", msg: "이미 완료됨", rawData: checkData };
+                return { code: "ALREADY_DONE", msg: i18n.get('log_check_already'), rawData: checkData };
             }
 
             const postRes = await fetch(url, {
@@ -235,9 +241,9 @@ class CheckInService {
             const postData = await postRes.json();
 
             if (postData.code === 0 || postData.code === 10001) {
-                return { code: "SUCCESS", msg: "출석 성공", rawData: postData };
+                return { code: "SUCCESS", msg: i18n.get('log_check_success'), rawData: postData };
             } else {
-                return { code: "FAIL", msg: postData.message || "Unknown error", rawData: postData };
+                return { code: "FAIL", msg: postData.message || i18n.get('log_unknown_error'), rawData: postData };
             }
 
         } catch (e) {
@@ -271,11 +277,11 @@ class DiscordWebhookService {
 
             if (response.ok) {
                 await this.store.markDiscordSent(serverDate);
-                await this.store.addDiscordLog("SUCCESS", "출석 완료 알림 전송");
+                await this.store.addDiscordLog("SUCCESS", i18n.get('log_discord_sent'));
                 return { code: "SUCCESS", msg: "Discord notification sent" };
             } else {
                 const errorText = await response.text();
-                await this.store.addDiscordLog("FAIL", `전송 실패: ${response.status}`);
+                await this.store.addDiscordLog("FAIL", `${i18n.get('log_discord_fail')}${response.status}`);
                 return { code: "FAIL", msg: `HTTP ${response.status}: ${errorText}` };
             }
         } catch (error) {
@@ -293,8 +299,8 @@ class DiscordWebhookService {
 
             const now = new Date();
             const kstTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3600000 * 9));
-            const dateStr = kstTime.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
-            const timeStr = kstTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const dateStr = kstTime.toLocaleDateString(i18n.locale, { month: 'long', day: 'numeric', weekday: 'short' });
+            const timeStr = kstTime.toLocaleTimeString(i18n.locale, { hour: '2-digit', minute: '2-digit', hour12: false });
 
             const account = await this.store.getAccount();
             const footerText = (account && account.uid)
@@ -302,21 +308,21 @@ class DiscordWebhookService {
                 : "Endfield Auto Check-in";
 
             const embed = {
-                title: "⚠️ 엔드필드 출석 체크 실패",
+                title: i18n.get('embed_fail_title'),
                 color: 16711680,
                 fields: [
                     {
-                        name: "📅 날짜",
+                        name: i18n.get('field_date'),
                         value: dateStr,
                         inline: true
                     },
                     {
-                        name: "🕐 시간",
+                        name: "time (hidden)",
                         value: timeStr,
                         inline: true
                     },
                     {
-                        name: "❌ 오류 내용",
+                        name: i18n.get('field_error'),
                         value: errorMsg,
                         inline: false
                     }
@@ -349,7 +355,7 @@ class DiscordWebhookService {
             const serverDate = kstTime.toISOString().split('T')[0];
 
             const embed = await this.formatAttendanceEmbed(result, serverDate, {
-                title: "✅ 출석 체크 이미 완료됨",
+                title: i18n.get('embed_already_title'),
                 color: 3447003
             });
 
@@ -359,7 +365,7 @@ class DiscordWebhookService {
                 body: JSON.stringify({ embeds: [embed] })
             });
 
-            await this.store.addDiscordLog("SUCCESS", "이미 완료됨 알림 전송");
+            await this.store.addDiscordLog("SUCCESS", i18n.get('log_already_sent'));
         } catch (e) {
             console.error("Error sending already done notification:", e);
         }
@@ -380,7 +386,7 @@ class DiscordWebhookService {
             ? `${account.uid}`
             : "Endfield Auto Check-in";
 
-        const title = options.title || "🎉 엔드필드 출석 체크 완료!";
+        const title = options.title || i18n.get('embed_success_title');
         const color = options.color || 13883715;
 
         const embed = {
@@ -388,7 +394,7 @@ class DiscordWebhookService {
             color: color,
             fields: [
                 {
-                    name: "📅 일시",
+                    name: i18n.get('field_date'),
                     value: dateTimeStr,
                     inline: false
                 }
@@ -414,7 +420,7 @@ class DiscordWebhookService {
                     if (apiData.resourceInfoMap && latestReward.awardId) {
                         const info = apiData.resourceInfoMap[latestReward.awardId];
                         if (info) {
-                            rewardName = info.name ? info.name.split('|')[0] : "알 수 없는 보상";
+                            rewardName = info.name ? info.name.split('|')[0] : i18n.get('val_unknown_reward');
                             rewardCount = info.count;
                             rewardIcon = info.icon;
                         }
@@ -423,8 +429,8 @@ class DiscordWebhookService {
                     const calculatedSignCount = doneItems.length;
 
                     embed.fields.push({
-                        name: "📊 누적 출석",
-                        value: `${calculatedSignCount}일`,
+                        name: i18n.get('field_accumulated'),
+                        value: `${calculatedSignCount}${i18n.get('val_days')}`,
                         inline: true
                     });
                 }
@@ -433,8 +439,8 @@ class DiscordWebhookService {
                 const signCount = apiData.signCount || apiData.sign_count || apiData.totalSignCount || apiData.currentSignCount;
                 if (signCount !== undefined) {
                     embed.fields.push({
-                        name: "📊 누적 출석",
-                        value: `${signCount}일`,
+                        name: i18n.get('field_accumulated'),
+                        value: `${signCount}${i18n.get('val_days')}`,
                         inline: true
                     });
                 }
@@ -454,7 +460,7 @@ class DiscordWebhookService {
                 }
 
                 embed.fields.push({
-                    name: "🎁 오늘의 보상",
+                    name: i18n.get('field_reward'),
                     value: rewardText,
                     inline: false
                 });
@@ -465,7 +471,6 @@ class DiscordWebhookService {
                     };
                 }
             } else {
-                console.log("[Discord] Reward parsing failed even with new logic. Data keys:", Object.keys(apiData));
             }
         }
 
@@ -479,51 +484,62 @@ class CheckInController {
         this.service = new CheckInService(this.store);
         this.discordService = new DiscordWebhookService(this.store);
     }
-    init() {
-        this.scheduleNextRun();
+    async init() {
+        this.registerListeners();
 
-        chrome.alarms.onAlarm.addListener((alarm) => {
+        await i18n.init();
+        this.scheduleNextRun();
+        this.checkOnStartup();
+    }
+
+    registerListeners() {
+        chrome.alarms.onAlarm.addListener(async (alarm) => {
+            await i18n.init();
             if (alarm.name === ALARM_NAME) {
                 this.run(false);
             }
         });
 
-        chrome.runtime.onStartup.addListener(() => {
+        chrome.runtime.onStartup.addListener(async () => {
+            await i18n.init();
             this.checkOnStartup();
         });
 
         chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-            if (msg.action === "manualRun") {
-                this.run(true);
-            }
-            else if (msg.action === "syncAccount") {
-                this.service.syncAccountData(msg.storageData).then(async res => {
-                    if (res.code === "SUCCESS") {
-                        this.store.addLog("SYNC", "계정 연동 성공");
-                        const result = await this.service.executeAttendance();
-                        this.handleResult(result);
-                    }
-                    else this.store.addLog("ERROR", res.msg);
-                    sendResponse(res);
-                });
-                return true;
-            }
-            else if (msg.action === "logout") {
-                this.store.set('accountInfo', null).then(() => {
-                    this.store.addLog("LOGOUT", "연동 해제");
-                    sendResponse({ code: "SUCCESS" });
-                });
-                return true;
-            }
-            else if (msg.action === "resetData") {
-                this.resetAllData().then(() => {
-                    sendResponse({ code: "SUCCESS" });
-                });
-                return true;
-            }
+            (async () => {
+                await i18n.init();
+                if (msg.action === "manualRun") {
+                    this.run(true);
+                    sendResponse({ code: "STARTED" });
+                }
+                else if (msg.action === "syncAccount") {
+                    this.service.syncAccountData(msg.storageData).then(async res => {
+                        if (res.code === "SUCCESS") {
+                            this.store.addLog("SYNC", i18n.get('log_sync_success'));
+                            const result = await this.service.executeAttendance();
+                            this.handleResult(result);
+                        }
+                        else this.store.addLog("ERROR", res.msg);
+                        sendResponse(res);
+                    });
+                }
+                else if (msg.action === "logout") {
+                    this.store.set('accountInfo', null).then(() => {
+                        this.store.addLog("LOGOUT", i18n.get('log_logout'));
+                        sendResponse({ code: "SUCCESS" });
+                    });
+                }
+                else if (msg.action === "resetData") {
+                    this.resetAllData().then(() => {
+                        sendResponse({ code: "SUCCESS" });
+                    });
+                } else {
+                    sendResponse({ code: "IGNORED" });
+                }
+            })();
+            return true;
         });
 
-        this.checkOnStartup();
         this.initCookieListener();
     }
 
@@ -564,11 +580,13 @@ class CheckInController {
             if (changeInfo.removed) return;
 
             const domain = changeInfo.cookie.domain;
-            const name = changeInfo.cookie.name;
-            const value = changeInfo.cookie.value;
-
             const isTargetDomain = TARGET_DOMAINS.some(d => domain.includes(d));
             if (!isTargetDomain) return;
+
+            await i18n.init();
+
+            const name = changeInfo.cookie.name;
+            const value = changeInfo.cookie.value;
 
             const isTargetCookie = ['SK_OAUTH_CRED_KEY', 'cred', 'sk_cred'].includes(name);
 
@@ -577,7 +595,7 @@ class CheckInController {
                 const updated = await this.store.updateCredential(value, allCookies);
 
                 if (updated) {
-                    this.store.addLog("INFO", "쿠키 감지: 인증 정보 및 전체 쿠키 갱신됨");
+                    this.store.addLog("INFO", i18n.get('log_cookie_update'));
                 }
             }
         });
@@ -599,7 +617,7 @@ class CheckInController {
 
     async handleResult(result, isManual = false) {
         const serverToday = this.service.getServerTodayString();
-        const timeString = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        const timeString = new Date().toLocaleTimeString(i18n.locale, { hour: '2-digit', minute: '2-digit' });
 
         await this.store.addLog(result.code, result.msg);
 
@@ -616,7 +634,7 @@ class CheckInController {
             this.setBadgeX();
             await this.store.saveResult("FAIL", serverToday, timeString);
 
-            await this.discordService.sendErrorNotification(result.msg || "출석 체크 실패");
+            await this.discordService.sendErrorNotification(result.msg || i18n.get('log_check_fail'));
         }
     }
 

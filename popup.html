@@ -35,17 +35,18 @@
     <div class="app-container">
         <header>
             <div class="title-area">
-                <h2 class="glow-text">ENDFIELD<br>CHECK-IN</h2>
+                <h2 class="glow-text" data-i18n-html="title_main">ENDFIELD<br>CHECK-IN</h2>
             </div>
             <div class="header-controls">
-                <button id="btnDiscord" class="icon-btn" title="디스코드 알림 설정">
+                <button id="btnLang" class="icon-btn" style="font-size: 11px; width: 28px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2);" title="언어 변경 / Change Language">KO</button>
+                <button id="btnDiscord" class="icon-btn" title="디스코드 알림 설정" data-i18n-title="btn_discord_title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg">
                         <path
                             d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
                     </svg>
                 </button>
-                <button id="btnSettings" class="icon-btn" title="설정 및 기록">
+                <button id="btnSettings" class="icon-btn" title="설정 및 기록" data-i18n-title="btn_settings_title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -57,40 +58,40 @@
 
         <div id="mainView">
             <div class="status-card">
-                <div class="status-header">TODAY'S STATUS</div>
+                <div class="status-header" data-i18n="status_header">TODAY'S STATUS</div>
                 <div id="statusDisplay" class="status-value">-</div>
                 <div id="lastRunDisplay" class="status-time">마지막 실행: -</div>
             </div>
-            <button id="runNowBtn" class="btn-primary full-width">CHECK NOW</button>
-            <a href="https://game.skport.com/endfield/sign-in" target="_blank" class="site-link">출석 사이트 바로가기 ↗</a>
+            <button id="runNowBtn" class="btn-primary full-width" data-i18n="btn_check_now">CHECK NOW</button>
+            <a href="https://game.skport.com/endfield/sign-in" target="_blank" class="site-link" data-i18n="link_site">출석 사이트 바로가기 ↗</a>
 
 
         </div>
 
         <div id="settingsView" style="display: none;">
-            <div class="section-title">계정 연동 상태</div>
+            <div class="section-title" data-i18n="section_account">계정 연동 상태</div>
 
             <div class="sync-box">
-                <div id="userInfo" class="sync-info">정보 없음</div>
+                <div id="userInfo" class="sync-info" data-i18n="info_no_info">정보 없음</div>
                 <div class="btn-group-row">
-                    <button id="btnSync" class="btn-primary small">연동 갱신</button>
-                    <button id="btnUnlink" class="btn-danger">해제</button>
-                    <button id="btnReset" class="btn-danger-outline">초기화</button>
+                    <button id="btnSync" class="btn-primary small" data-i18n="btn_sync_refresh">연동 갱신</button>
+                    <button id="btnUnlink" class="btn-danger" data-i18n="btn_unlink">해제</button>
+                    <button id="btnReset" class="btn-danger-outline" data-i18n="btn_reset">초기화</button>
                 </div>
             </div>
 
-            <div class="section-title">최근 기록</div>
+            <div class="section-title" data-i18n="section_logs">최근 기록</div>
             <div id="logList" class="log-list">
-                <div style="text-align:center; color:#666; padding:10px;">기록 없음</div>
+                <div style="text-align:center; color:#666; padding:10px;" data-i18n="msg_no_logs">기록 없음</div>
             </div>
 
-            <button id="btnBack" class="btn-text">← 돌아가기</button>
+            <button id="btnBack" class="btn-text" data-i18n="btn_back">← 돌아가기</button>
         </div>
 
         <div id="discordView" style="display: none;">
             <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
-                디스코드 웹훅 설정
-                <button id="btnWebhookHelp" class="icon-btn" title="웹훅 URL 얻는 방법" style="padding: 2px;">
+                <span data-i18n="title_discord">디스코드 웹훅 설정</span>
+                <button id="btnWebhookHelp" class="icon-btn" title="웹훅 URL 얻는 방법" data-i18n-title="btn_webhook_help" style="padding: 2px;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -102,43 +103,44 @@
             <div class="sync-box" style="flex-direction: column; align-items: stretch;">
                 <div style="margin-bottom: 16px;">
                     <label
-                        style="display: block; font-size: 12px; color: #999; margin-bottom: 6px; font-weight: 600;">웹훅
+                        style="display: block; font-size: 12px; color: #999; margin-bottom: 6px; font-weight: 600;" data-i18n="label_webhook_url">웹훅
                         URL</label>
                     <input type="text" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..."
                         style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 12px; box-sizing: border-box;">
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                    <button id="btnSaveWebhook" class="btn-primary" style="flex: 1; padding: 10px;">저장</button>
+                    <button id="btnSaveWebhook" class="btn-primary" style="flex: 1; padding: 10px;" data-i18n="btn_save">저장</button>
                     <button id="btnTestWebhook" class="btn-primary"
-                        style="flex: 1; padding: 10px; background: rgba(88, 101, 242, 0.3); color: #5865F2;">테스트</button>
+                        style="flex: 1; padding: 10px; background: rgba(88, 101, 242, 0.3); color: #5865F2;" data-i18n="btn_test">테스트</button>
                 </div>
 
                 <div id="discordStatus" style="font-size: 11px; color: #999; text-align: center; padding: 8px 0;">
-                    설정되지 않음
+                    <span data-i18n="status_not_set">설정되지 않음</span>
                 </div>
             </div>
 
 
 
-            <button id="btnBackFromDiscord" class="btn-text">← 돌아가기</button>
+            <button id="btnBackFromDiscord" class="btn-text" data-i18n="btn_back">← 돌아가기</button>
         </div>
     </div>
 
     <!-- Custom Modal -->
     <div id="customModal" class="modal-overlay">
         <div class="modal-container">
-            <div id="modalTitle" class="modal-title">알림</div>
+            <div id="modalTitle" class="modal-title" data-i18n="modal_alert_title">알림</div>
             <div id="modalMessage" class="modal-message">내용</div>
             <div class="modal-buttons">
-                <button id="modalBtnCancel" class="modal-btn secondary">취소</button>
-                <button id="modalBtnOk" class="modal-btn primary">확인</button>
+                <button id="modalBtnCancel" class="modal-btn secondary" data-i18n="btn_cancel">취소</button>
+                <button id="modalBtnOk" class="modal-btn primary" data-i18n="btn_ok">확인</button>
             </div>
         </div>
     </div>
 
 
 
+    <script src="i18n.js"></script>
     <script src="popup.js"></script>
 </body>
 
