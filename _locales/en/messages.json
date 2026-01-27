@@ -1,0 +1,10 @@
+{
+    "extName": {
+        "message": "Arknights: Endfield Auto Check-in",
+        "description": "Extension Name"
+    },
+    "extDescription": {
+        "message": "Automated daily check-in for Arknights: Endfield",
+        "description": "Extension Description"
+    }
+}

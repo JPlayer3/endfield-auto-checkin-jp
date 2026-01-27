@@ -1,0 +1,10 @@
+{
+    "extName": {
+        "message": "명일방주: 엔드필드 자동 출석체크",
+        "description": "확장 프로그램 이름"
+    },
+    "extDescription": {
+        "message": "명일방주: 엔드필드 자동 출석체크 확장 프로그램",
+        "description": "확장 프로그램 설명"
+    }
+}
