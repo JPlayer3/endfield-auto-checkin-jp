@@ -298,9 +298,9 @@ class DiscordWebhookService {
             }
 
             const now = new Date();
-            const kstTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3600000 * 9));
-            const dateStr = kstTime.toLocaleDateString(i18n.locale, { month: 'long', day: 'numeric', weekday: 'short' });
-            const timeStr = kstTime.toLocaleTimeString(i18n.locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+            const dateTimeStr = now.toLocaleDateString(i18n.locale, {
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            });
 
             const account = await this.store.getAccount();
             const footerText = (account && account.uid)
@@ -313,12 +313,7 @@ class DiscordWebhookService {
                 fields: [
                     {
                         name: i18n.get('field_date'),
-                        value: dateStr,
-                        inline: true
-                    },
-                    {
-                        name: "time (hidden)",
-                        value: timeStr,
+                        value: dateTimeStr,
                         inline: true
                     },
                     {
@@ -373,13 +368,11 @@ class DiscordWebhookService {
 
     async formatAttendanceEmbed(data, serverDate, options = {}) {
         const now = new Date();
-        const kstTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3600000 * 9));
-        const year = kstTime.getFullYear();
-        const month = String(kstTime.getMonth() + 1).padStart(2, '0');
-        const day = String(kstTime.getDate()).padStart(2, '0');
-        const hours = String(kstTime.getHours()).padStart(2, '0');
-        const minutes = String(kstTime.getMinutes()).padStart(2, '0');
-        const dateTimeStr = `${year}-${month}-${day} ${hours}:${minutes}`;
+        const dateTimeStr = now.toLocaleDateString(i18n.locale, {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
 
         const account = await this.store.getAccount();
         const footerText = (account && account.uid)
@@ -396,7 +389,7 @@ class DiscordWebhookService {
                 {
                     name: i18n.get('field_date'),
                     value: dateTimeStr,
-                    inline: false
+                    inline: true
                 }
             ],
             footer: {
@@ -462,7 +455,7 @@ class DiscordWebhookService {
                 embed.fields.push({
                     name: i18n.get('field_reward'),
                     value: rewardText,
-                    inline: false
+                    inline: true
                 });
 
                 if (rewardIcon) {

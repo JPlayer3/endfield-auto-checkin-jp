@@ -32,6 +32,7 @@
                 "https://*.gryphline.com/*"
             ],
             "js": [
+                "i18n.js",
                 "content.js"
             ],
             "run_at": "document_idle"

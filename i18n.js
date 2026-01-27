@@ -98,7 +98,21 @@ const TRANSLATIONS = {
         test_modal_title: "테스트 메시지 유형 선택",
         test_btn_success: "✅ 출석 성공",
         test_btn_already: "ℹ️ 이미 완료됨",
-        test_btn_fail: "❌ 출석 실패"
+        test_btn_fail: "❌ 출석 실패",
+
+        // Content Script (Sync Prompt)
+        prompt_title: "⚡ 자동 출석 계정 연동",
+        prompt_desc: "로그인된 계정으로<br>자동 출석을 설정하시겠습니까?",
+        title_conn_lost: "연결 끊김",
+        msg_update_refresh: "확장 프로그램이 업데이트되었습니다.\n페이지를 새로고침 해주세요.",
+        msg_send_fail: "메시지 전송 실패: 페이지를 새로고침 하세요.",
+        title_sync_complete: "연동 완료!",
+        msg_sync_complete_desc: "성공적으로 계정이 연동되었습니다.",
+        msg_no_response: "응답 없음",
+        title_auth_fail: "인증 실패",
+        msg_session_expired: "로그인 세션이 만료되었습니다.\n사이트 로그아웃 후 다시 로그인해주세요.",
+        title_sync_fail: "연동 실패",
+        msg_ext_lost: "확장 프로그램 연결이 끊겼습니다.\n페이지를 새로고침 해주세요."
     },
     en: {
         title_main: "ENDFIELD<br>CHECK-IN",
@@ -199,7 +213,21 @@ const TRANSLATIONS = {
         test_modal_title: "Select Test Message Type",
         test_btn_success: "✅ Success",
         test_btn_already: "ℹ️ Already Done",
-        test_btn_fail: "❌ Failed"
+        test_btn_fail: "❌ Failed",
+
+        // Content Script (Sync Prompt)
+        prompt_title: "⚡ Auto Check-in Account Sync",
+        prompt_desc: "Do you want to set up auto check-in<br>with the logged-in account?",
+        title_conn_lost: "Connection Lost",
+        msg_update_refresh: "Extension updated.\nPlease refresh the page.",
+        msg_send_fail: "Message send failed: Please refresh.",
+        title_sync_complete: "Sync Complete!",
+        msg_sync_complete_desc: "Account successfully synced.",
+        msg_no_response: "No Response",
+        title_auth_fail: "Auth Failed",
+        msg_session_expired: "Login session expired.\nPlease logout and login again.",
+        title_sync_fail: "Sync Failed",
+        msg_ext_lost: "Extension connection lost.\nPlease refresh the page."
     }
 };
 

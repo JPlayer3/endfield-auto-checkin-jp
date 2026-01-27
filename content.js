@@ -1,7 +1,15 @@
-chrome.storage.local.get(['accountInfo'], (data) => {
-    if (data.accountInfo && data.accountInfo.cred) return;
-    showSyncPrompt();
-});
+// Initialize i18n and then check storage
+(async () => {
+    // Wait for i18n to be ready (it's loaded before this script)
+    if (typeof i18n !== 'undefined') {
+        await i18n.init();
+    }
+
+    chrome.storage.local.get(['accountInfo'], (data) => {
+        if (data.accountInfo && data.accountInfo.cred) return;
+        showSyncPrompt();
+    });
+})();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "getLocalStorage") {
@@ -77,12 +85,18 @@ function showSyncPrompt() {
         display: flex; flex-direction: column; gap: 10px; width: 260px; font-size: 13px;
     `;
 
+    // Use i18n for texts
+    const title = i18n.get('prompt_title');
+    const desc = i18n.get('prompt_desc');
+    const btnYes = i18n.get('btn_yes');
+    const btnNo = i18n.get('btn_no');
+
     div.innerHTML = `
-        <div style="font-weight:700; color:#D4D94A;">⚡ 자동 출석 계정 연동</div>
-        <div style="color:#ccc; line-height:1.4;">로그인된 계정으로<br>자동 출석을 설정하시겠습니까?</div>
+        <div style="font-weight:700; color:#D4D94A;">${title}</div>
+        <div style="color:#ccc; line-height:1.4;">${desc}</div>
         <div style="display:flex; gap:8px;">
-            <button id="btn-sync-yes" style="flex:1; background:#D4D94A; border:none; padding:8px 0; border-radius:6px; font-weight:700; cursor:pointer; color:#1A1A1A;">네</button>
-            <button id="btn-sync-no" style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); padding:8px 0; border-radius:6px; color:#fff; cursor:pointer;">아니오</button>
+            <button id="btn-sync-yes" style="flex:1; background:#D4D94A; border:none; padding:8px 0; border-radius:6px; font-weight:700; cursor:pointer; color:#1A1A1A;">${btnYes}</button>
+            <button id="btn-sync-no" style="flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); padding:8px 0; border-radius:6px; color:#fff; cursor:pointer;">${btnNo}</button>
         </div>
     `;
 
@@ -90,7 +104,7 @@ function showSyncPrompt() {
 
     document.getElementById('btn-sync-yes').addEventListener('click', async () => {
         if (!chrome.runtime?.id) {
-            await showModal("연결 끊김", "확장 프로그램이 업데이트되었습니다.\n페이지를 새로고침 해주세요.", false);
+            await showModal(i18n.get('title_conn_lost'), i18n.get('msg_update_refresh'), false);
             return;
         }
 
@@ -99,25 +113,25 @@ function showSyncPrompt() {
         try {
             chrome.runtime.sendMessage({ action: "syncAccount", storageData: data }, async (res) => {
                 if (chrome.runtime.lastError) {
-                    await showModal("오류", "메시지 전송 실패: 페이지를 새로고침 하세요.", false);
+                    await showModal(i18n.get('modal_error_title'), i18n.get('msg_send_fail'), false);
                     return;
                 }
 
                 if (res && res.code === "SUCCESS") {
-                    await showModal("연동 완료!", "성공적으로 계정이 연동되었습니다.");
+                    await showModal(i18n.get('title_sync_complete'), i18n.get('msg_sync_complete_desc'));
                     div.remove();
                 } else {
-                    const msg = res ? res.msg : "응답 없음";
-                    if (msg.includes("401") || msg.includes("로그인")) {
-                        await showModal("인증 실패", "로그인 세션이 만료되었습니다.\n사이트 로그아웃 후 다시 로그인해주세요.", false);
+                    const msg = res ? res.msg : i18n.get('msg_no_response');
+                    if (msg.includes("401") || msg.includes("로그인") || msg.includes("Login")) {
+                        await showModal(i18n.get('title_auth_fail'), i18n.get('msg_session_expired'), false);
                     } else {
-                        await showModal("연동 실패", msg, false);
+                        await showModal(i18n.get('title_sync_fail'), msg, false);
                     }
                 }
             });
         } catch (e) {
             console.error(e);
-            await showModal("오류", "확장 프로그램 연결이 끊겼습니다.\n페이지를 새로고침 해주세요.", false);
+            await showModal(i18n.get('modal_error_title'), i18n.get('msg_ext_lost'), false);
         }
     });
 
@@ -150,6 +164,7 @@ function showModal(title, msg, isSuccess = true) {
         `;
 
         const color = isSuccess ? '#D4D94A' : '#FF3B30';
+        const btnText = i18n.get('btn_ok');
 
         container.innerHTML = `
             <div style="font-size:16px; font-weight:700; color:${color}; margin-bottom:12px;">${title}</div>
@@ -157,7 +172,7 @@ function showModal(title, msg, isSuccess = true) {
             <button id="modal-btn-confirm" style="
                 width: 100%; padding: 10px 0; border-radius: 6px; border: none;
                 background: ${color}; color: #1A1A1A; font-size: 13px; font-weight: 800; cursor: pointer;
-            ">확인</button>
+            ">${btnText}</button>
         `;
 
         overlay.appendChild(container);
