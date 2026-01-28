@@ -2,7 +2,7 @@
 
 # Endfield Auto Check-in
 
-[![Version](https://img.shields.io/badge/Version-1.3.0-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.3.0)
+[![Version](https://img.shields.io/badge/Version-1.3.1-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.3.1)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/)
 
@@ -11,7 +11,7 @@
 
 <br/>
 
-[🇺🇸 English Version](./README_EN.md)
+[🇺🇸 English](./README_EN.md) | [🇯🇵 日本語](./README_JA.md) | [🇨🇳 简体中文](./README_ZH.md)
 
 <br/>
 
@@ -39,12 +39,10 @@ Endfield Auto Check-in은
 
 ## 📝 개요
 
-> **✅ 한국어(Korean) 및 영어(English) 인터페이스를 지원합니다.**
-
 | 구분 | 상세 내용 |
 | :--- | :--- |
 | **플랫폼** | Chrome, Edge, Whale 등 Chromium 기반 브라우저 |
-| **버전** | 1.3.0 |
+| **버전** | 1.3.1 |
 | **동작 조건** | SKPORT 게임 사이트 로그인 상태 |
 | **실행 방식** | 로컬 브라우저 백그라운드 자동화 |
 | **외부 통신** | 없음 (단, 사용자 설정 시 Discord 알림 전송) |

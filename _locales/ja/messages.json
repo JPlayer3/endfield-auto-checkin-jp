@@ -1,0 +1,10 @@
+{
+    "extName": {
+        "message": "アークナイツ：エンドフィールド 自動チェックイン",
+        "description": "Extension Name"
+    },
+    "extDescription": {
+        "message": "アークナイツ：エンドフィールドの毎日の自動チェックイン",
+        "description": "Extension Description"
+    }
+}

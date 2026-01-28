@@ -89,10 +89,19 @@ class CheckInService {
     }
 
     async getHeaders(cred, role) {
-        const langHeader = i18n.lang === 'en'
-            ? "en-US,en;q=0.9,ko-KR;q=0.8,ko;q=0.7"
-            : "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7";
-        const skLang = i18n.lang === 'en' ? 'en' : 'ko';
+        let langHeader = "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7";
+        let skLang = "ko";
+
+        if (i18n.lang === 'en') {
+            langHeader = "en-US,en;q=0.9,ko-KR;q=0.8,ko;q=0.7";
+            skLang = "en";
+        } else if (i18n.lang === 'ja') {
+            langHeader = "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7";
+            skLang = "ja";
+        } else if (i18n.lang === 'zh') {
+            langHeader = "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7";
+            skLang = "zh-cn";
+        }
 
         const headers = {
             "accept": "application/json, text/plain, */*",
@@ -172,7 +181,7 @@ class CheckInService {
             let cred = localStorageData?.cred || this.findCredInCookies(cookies);
 
             if (!cred) {
-                throw new Error("로그인 정보를 찾을 수 없습니다.\n사이트에 로그인되어 있는지 확인해주세요.");
+                throw new Error(i18n.get('err_login_not_found'));
             }
 
             if (cred) {
@@ -181,7 +190,7 @@ class CheckInService {
 
             const roleData = await this.fetchGameRole(cred);
             if (!roleData) {
-                return { code: "FAIL", msg: "캐릭터 정보(UID)를 찾을 수 없습니다.\n게임에 캐릭터가 생성되어 있는지 확인해주세요." };
+                return { code: "FAIL", msg: i18n.get('err_char_not_found_desc') };
             }
 
             const accountInfo = {
@@ -241,10 +250,55 @@ class CheckInService {
             const postData = await postRes.json();
 
             if (postData.code === 0 || postData.code === 10001) {
+                try {
+                    const afterRes = await fetch(url, { method: "GET", headers: headers });
+                    const afterData = await afterRes.json();
+                    if (afterData.code === 0 && afterData.data) {
+                        return { code: "SUCCESS", msg: i18n.get('log_check_success'), rawData: afterData };
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch after-check-in data:", e);
+                }
                 return { code: "SUCCESS", msg: i18n.get('log_check_success'), rawData: postData };
             } else {
                 return { code: "FAIL", msg: postData.message || i18n.get('log_unknown_error'), rawData: postData };
             }
+
+        } catch (e) {
+            return { code: "ERROR", msg: e.message };
+        }
+    }
+
+    async fetchAttendanceStatus() {
+        try {
+            const account = await this.store.getAccount();
+            if (!account || !account.cred) return { code: "NOT_LOGGED_IN" };
+
+            await this.refreshSession(account.cred);
+
+            let role = account.role;
+            if (!role) {
+                const roleData = await this.fetchGameRole(account.cred);
+                if (roleData) {
+                    account.role = roleData.roleValue;
+                    account.uid = roleData.roleId;
+                    await this.store.saveAccount(account);
+                    role = account.role;
+                }
+            }
+            if (!role) return { code: "FAIL", msg: i18n.get('err_no_role') };
+
+            const url = "https://zonai.skport.com/web/v1/game/endfield/attendance";
+            const headers = await this.getHeaders(account.cred, null);
+            const reqHeaders = { ...headers, "sk-game-role": role };
+
+            const res = await fetch(url, { method: "GET", headers: reqHeaders });
+            const data = await res.json();
+
+            if (data.code === 0) {
+                return { code: "SUCCESS", rawData: data };
+            }
+            return { code: "FAIL", rawData: data };
 
         } catch (e) {
             return { code: "ERROR", msg: e.message };
@@ -260,12 +314,12 @@ class DiscordWebhookService {
             const config = await this.store.getDiscordConfig();
 
             if (!config || !config.webhookUrl) {
-                return { code: "DISABLED", msg: "Discord notifications disabled" };
+                return { code: "DISABLED", msg: i18n.get('log_discord_disabled') };
             }
 
             const shouldSend = await this.store.shouldSendDiscordNotification(serverDate);
             if (!shouldSend) {
-                return { code: "ALREADY_SENT", msg: "Already sent today" };
+                return { code: "ALREADY_SENT", msg: i18n.get('log_today_already_sent') };
             }
 
             const embed = await this.formatAttendanceEmbed(attendanceData, serverDate);
@@ -278,7 +332,7 @@ class DiscordWebhookService {
             if (response.ok) {
                 await this.store.markDiscordSent(serverDate);
                 await this.store.addDiscordLog("SUCCESS", i18n.get('log_discord_sent'));
-                return { code: "SUCCESS", msg: "Discord notification sent" };
+                return { code: "SUCCESS", msg: i18n.get('log_discord_sent') };
             } else {
                 const errorText = await response.text();
                 await this.store.addDiscordLog("FAIL", `${i18n.get('log_discord_fail')}${response.status}`);
@@ -305,7 +359,7 @@ class DiscordWebhookService {
             const account = await this.store.getAccount();
             const footerText = (account && account.uid)
                 ? `${account.uid}`
-                : "Endfield Auto Check-in";
+                : i18n.get('footer_text');
 
             const embed = {
                 title: i18n.get('embed_fail_title'),
@@ -377,7 +431,7 @@ class DiscordWebhookService {
         const account = await this.store.getAccount();
         const footerText = (account && account.uid)
             ? `${account.uid}`
-            : "Endfield Auto Check-in";
+            : i18n.get('footer_text');
 
         const title = options.title || i18n.get('embed_success_title');
         const color = options.color || 13883715;
@@ -405,22 +459,44 @@ class DiscordWebhookService {
             let rewardIcon = "";
 
             if (apiData.calendar) {
+                let targetItem = null;
+                let calculatedSignCount = 0;
+
                 const doneItems = apiData.calendar.filter(item => item.done === true);
 
-                if (doneItems.length > 0) {
-                    const latestReward = doneItems[doneItems.length - 1];
-
-                    if (apiData.resourceInfoMap && latestReward.awardId) {
-                        const info = apiData.resourceInfoMap[latestReward.awardId];
-                        if (info) {
-                            rewardName = info.name ? info.name.split('|')[0] : i18n.get('val_unknown_reward');
-                            rewardCount = info.count;
-                            rewardIcon = info.icon;
+                if (options.isTest) {
+                    if (options.testType === 'ALREADY_DONE') {
+                        if (doneItems.length > 0) targetItem = doneItems[doneItems.length - 1];
+                    } else {
+                        if (!apiData.hasToday) {
+                            const nextItem = apiData.calendar.find(item => !item.done);
+                            if (nextItem) targetItem = nextItem;
+                            calculatedSignCount = doneItems.length + 1;
+                        } else {
+                            if (doneItems.length > 0) targetItem = doneItems[doneItems.length - 1];
+                            calculatedSignCount = doneItems.length;
                         }
                     }
 
-                    const calculatedSignCount = doneItems.length;
+                    if (!calculatedSignCount) calculatedSignCount = doneItems.length;
+                }
+                else {
+                    if (doneItems.length > 0) {
+                        targetItem = doneItems[doneItems.length - 1];
+                    }
+                    calculatedSignCount = doneItems.length;
+                }
 
+                if (targetItem && apiData.resourceInfoMap && targetItem.awardId) {
+                    const info = apiData.resourceInfoMap[targetItem.awardId];
+                    if (info) {
+                        rewardName = info.name ? info.name.split('|')[0] : i18n.get('val_unknown_reward');
+                        rewardCount = info.count;
+                        rewardIcon = info.icon;
+                    }
+                }
+
+                if (calculatedSignCount > 0) {
                     embed.fields.push({
                         name: i18n.get('field_accumulated'),
                         value: `${calculatedSignCount}${i18n.get('val_days')}`,
@@ -463,11 +539,81 @@ class DiscordWebhookService {
                         url: rewardIcon
                     };
                 }
-            } else {
             }
+        }
+        else if (options.isTest) {
+            embed.fields.push({
+                name: i18n.get('field_accumulated'),
+                value: `99${i18n.get('val_days')}`,
+                inline: true
+            });
+            embed.fields.push({
+                name: i18n.get('field_reward'),
+                value: `${i18n.get('val_test_item')} x1`,
+                inline: true
+            });
         }
 
         return embed;
+    }
+
+    async generateTestEmbed(type) {
+        const config = await this.store.getDiscordConfig();
+        if (!config || !config.webhookUrl) return { code: "FAIL", msg: i18n.get('err_no_webhook') };
+
+        let resultData = { code: "TEST_MODE", rawData: {} };
+        const fetched = await controller.service.fetchAttendanceStatus();
+
+        if (fetched.code === "SUCCESS") {
+            resultData.rawData = fetched.rawData;
+        } else if (fetched.code === "NOT_LOGGED_IN") {
+            return { code: "GUEST" };
+        } else {
+            return { code: "GUEST" };
+        }
+
+        const now = new Date();
+        const dateTimeStr = now.toLocaleDateString(i18n.locale, {
+            year: 'numeric', month: '2-digit', day: '2-digit'
+        });
+
+        let embed;
+        if (type === 'SUCCESS') {
+            embed = await this.formatAttendanceEmbed(resultData, "", {
+                title: i18n.get('embed_test_success_title'),
+                color: 13883715,
+                isTest: true,
+                testType: 'SUCCESS'
+            });
+        } else if (type === 'ALREADY_DONE') {
+            embed = await this.formatAttendanceEmbed(resultData, "", {
+                title: i18n.get('embed_test_already_title'),
+                color: 3447003,
+                isTest: true,
+                testType: 'ALREADY_DONE'
+            });
+        } else {
+            embed = {
+                title: i18n.get('embed_test_fail_title'),
+                color: 16711680,
+                fields: [
+                    {
+                        name: i18n.get('field_date'),
+                        value: dateTimeStr,
+                        inline: true
+                    },
+                    {
+                        name: i18n.get('field_error'),
+                        value: i18n.get('val_test_error'),
+                        inline: false
+                    }
+                ],
+                footer: { text: i18n.get('footer_text') },
+                timestamp: now.toISOString()
+            };
+        }
+
+        return { code: "SUCCESS", embed: embed };
     }
 }
 
@@ -526,7 +672,12 @@ class CheckInController {
                     this.resetAllData().then(() => {
                         sendResponse({ code: "SUCCESS" });
                     });
-                } else {
+                }
+                else if (msg.action === "generateTestEmbed") {
+                    const result = await this.discordService.generateTestEmbed(msg.testType);
+                    sendResponse(result);
+                }
+                else {
                     sendResponse({ code: "IGNORED" });
                 }
             })();

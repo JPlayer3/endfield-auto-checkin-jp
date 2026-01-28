@@ -1,6 +1,4 @@
-// Initialize i18n and then check storage
 (async () => {
-    // Wait for i18n to be ready (it's loaded before this script)
     if (typeof i18n !== 'undefined') {
         await i18n.init();
     }
@@ -72,7 +70,8 @@ function scanForAccountData() {
     return { cred, role };
 }
 
-function showSyncPrompt() {
+async function showSyncPrompt() {
+    await i18n.init();
     if (document.getElementById('endfield-sync-prompt')) return;
 
     const div = document.createElement('div');
@@ -85,7 +84,6 @@ function showSyncPrompt() {
         display: flex; flex-direction: column; gap: 10px; width: 260px; font-size: 13px;
     `;
 
-    // Use i18n for texts
     const title = i18n.get('prompt_title');
     const desc = i18n.get('prompt_desc');
     const btnYes = i18n.get('btn_yes');
@@ -140,7 +138,8 @@ function showSyncPrompt() {
     });
 }
 
-function showModal(title, msg, isSuccess = true) {
+async function showModal(title, msg, isSuccess = true) {
+    await i18n.init();
     return new Promise((resolve) => {
         const modalId = 'endfield-custom-modal';
         if (document.getElementById(modalId)) return;

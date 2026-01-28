@@ -12,16 +12,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderDiscordConfig(data.discordConfig);
 
     document.getElementById('btnLang').addEventListener('click', async () => {
-        const current = i18n.lang;
-        const next = current === 'ko' ? 'en' : 'ko';
-        await i18n.setLanguage(next);
-        applyI18n();
-        storage.get(['lastStatus', 'lastCheckTime', 'accountInfo', 'checkInLogs', 'discordConfig'], (d) => {
-            renderStatus(d);
-            renderLogs(d.checkInLogs);
-            renderAccountInfo(d.accountInfo);
-            renderDiscordConfig(d.discordConfig);
-        });
+        const selectedLang = await showLanguageModal();
+        if (selectedLang) {
+            await i18n.setLanguage(selectedLang);
+            applyI18n();
+            storage.get(['lastStatus', 'lastCheckTime', 'accountInfo', 'checkInLogs', 'discordConfig'], (d) => {
+                renderStatus(d);
+                renderLogs(d.checkInLogs);
+                renderAccountInfo(d.accountInfo);
+                renderDiscordConfig(d.discordConfig);
+            });
+        }
     });
 
     document.getElementById('btnSettings').addEventListener('click', () => {
@@ -169,7 +170,7 @@ async function handleSyncClick() {
             storageData: storageData
         }, async (res) => {
             if (chrome.runtime.lastError) {
-                await Modal.alert("Error: " + chrome.runtime.lastError.message);
+                await Modal.alert(i18n.get('err_prefix') + chrome.runtime.lastError.message);
                 btn.innerText = i18n.get('btn_sync_refresh');
                 btn.disabled = false;
                 return;
@@ -209,14 +210,14 @@ async function handleReset() {
 
     chrome.runtime.sendMessage({ action: "resetData" }, async (res) => {
         if (chrome.runtime.lastError) {
-            await Modal.alert("Error: " + chrome.runtime.lastError.message);
+            await Modal.alert(i18n.get('err_prefix') + chrome.runtime.lastError.message);
             return;
         }
         if (res && res.code === "SUCCESS") {
             await Modal.alert(i18n.get('msg_reset_done'), i18n.get('modal_reset_title'));
             location.reload();
         } else {
-            await Modal.alert("Reset Failed", i18n.get('modal_error_title'));
+            await Modal.alert(i18n.get('err_reset_fail'), i18n.get('modal_error_title'));
         }
     });
 }
@@ -283,7 +284,7 @@ function renderAccountInfo(info) {
 
         chrome.runtime.sendMessage({ action: "logout" }, async (res) => {
             if (chrome.runtime.lastError) {
-                await Modal.alert("Error: " + chrome.runtime.lastError.message);
+                await Modal.alert(i18n.get('err_prefix') + chrome.runtime.lastError.message);
                 return;
             }
             if (res && res.code === "SUCCESS") {
@@ -368,7 +369,23 @@ async function handleTestWebhook() {
     btn.disabled = true;
 
     try {
-        const testEmbed = createTestEmbed(testType, data.accountInfo);
+        let testEmbed = null;
+
+        try {
+            const bgResponse = await new Promise((resolve) => {
+                chrome.runtime.sendMessage({ action: "generateTestEmbed", testType: testType }, resolve);
+            });
+
+            if (bgResponse && bgResponse.code === "SUCCESS" && bgResponse.embed) {
+                testEmbed = bgResponse.embed;
+            }
+        } catch (e) {
+            console.log("Background generation failed, falling back to local:", e);
+        }
+
+        if (!testEmbed) {
+            testEmbed = createTestEmbed(testType, data.accountInfo);
+        }
 
         const response = await fetch(webhookUrl, {
             method: 'POST',
@@ -427,6 +444,42 @@ function showTestTypeModal() {
     });
 }
 
+function showLanguageModal() {
+    return new Promise((resolve) => {
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay active';
+        modalOverlay.style.zIndex = '10000';
+
+        modalOverlay.innerHTML = `
+            <div class="modal-container">
+                <div class="modal-title">${i18n.get('modal_lang_title')}</div>
+                <div class="modal-message" style="text-align: center;">
+                    <button id="langKo" class="btn-primary full-width" style="margin-bottom: 8px; background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);">한국어</button>
+                    <button id="langEn" class="btn-primary full-width" style="margin-bottom: 8px; background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);">English</button>
+                    <button id="langJa" class="btn-primary full-width" style="margin-bottom: 8px; background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);">日本語</button>
+                    <button id="langZh" class="btn-primary full-width" style="margin-bottom: 8px; background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);">简体中文</button>
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn secondary" id="langCancel">${i18n.get('btn_cancel')}</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modalOverlay);
+
+        const close = (result) => {
+            document.body.removeChild(modalOverlay);
+            resolve(result);
+        };
+
+        document.getElementById('langKo').onclick = () => close('ko');
+        document.getElementById('langEn').onclick = () => close('en');
+        document.getElementById('langJa').onclick = () => close('ja');
+        document.getElementById('langZh').onclick = () => close('zh');
+        document.getElementById('langCancel').onclick = () => close(null);
+    });
+}
+
 function createTestEmbed(type, accountInfo) {
     const now = new Date();
     const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
@@ -443,7 +496,7 @@ function createTestEmbed(type, accountInfo) {
 
     const footerText = (accountInfo && accountInfo.uid)
         ? `UID: ${accountInfo.uid}`
-        : "Endfield Auto Check-in";
+        : i18n.get('footer_text');
     if (type === 'SUCCESS') {
         return {
             title: i18n.get('embed_test_success_title'),

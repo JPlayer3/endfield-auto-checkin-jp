@@ -100,7 +100,6 @@ const TRANSLATIONS = {
         test_btn_already: "ℹ️ 이미 완료됨",
         test_btn_fail: "❌ 출석 실패",
 
-        // Content Script (Sync Prompt)
         prompt_title: "⚡ 자동 출석 계정 연동",
         prompt_desc: "로그인된 계정으로<br>자동 출석을 설정하시겠습니까?",
         title_conn_lost: "연결 끊김",
@@ -112,7 +111,18 @@ const TRANSLATIONS = {
         title_auth_fail: "인증 실패",
         msg_session_expired: "로그인 세션이 만료되었습니다.\n사이트 로그아웃 후 다시 로그인해주세요.",
         title_sync_fail: "연동 실패",
-        msg_ext_lost: "확장 프로그램 연결이 끊겼습니다.\n페이지를 새로고침 해주세요."
+        msg_ext_lost: "확장 프로그램 연결이 끊겼습니다.\n페이지를 새로고침 해주세요.",
+
+        err_prefix: "오류: ",
+        err_reset_fail: "초기화 실패",
+        err_no_role: "캐릭터 역할 정보 없음",
+        err_no_webhook: "웹훅 URL 없음",
+        log_discord_disabled: "디스코드 알림 비활성화됨",
+        log_today_already_sent: "오늘 이미 발송됨",
+        footer_text: "엔드필드 자동 출석",
+        err_login_not_found: "로그인 정보를 찾을 수 없습니다.\n사이트에 로그인되어 있는지 확인해주세요.",
+        err_char_not_found_desc: "캐릭터 정보(UID)를 찾을 수 없습니다.\n게임에 캐릭터가 생성되어 있는지 확인해주세요.",
+        modal_lang_title: "언어 설정"
     },
     en: {
         title_main: "ENDFIELD<br>CHECK-IN",
@@ -215,7 +225,6 @@ const TRANSLATIONS = {
         test_btn_already: "ℹ️ Already Done",
         test_btn_fail: "❌ Failed",
 
-        // Content Script (Sync Prompt)
         prompt_title: "⚡ Auto Check-in Account Sync",
         prompt_desc: "Do you want to set up auto check-in<br>with the logged-in account?",
         title_conn_lost: "Connection Lost",
@@ -227,25 +236,290 @@ const TRANSLATIONS = {
         title_auth_fail: "Auth Failed",
         msg_session_expired: "Login session expired.\nPlease logout and login again.",
         title_sync_fail: "Sync Failed",
-        msg_ext_lost: "Extension connection lost.\nPlease refresh the page."
+        msg_ext_lost: "Extension connection lost.\nPlease refresh the page.",
+
+        err_prefix: "Error: ",
+        err_reset_fail: "Reset Failed",
+        err_no_role: "No Role Info",
+        err_no_webhook: "No Webhook URL",
+        log_discord_disabled: "Discord notifications disabled",
+        log_today_already_sent: "Already sent today",
+        footer_text: "Endfield Auto Check-in",
+        err_login_not_found: "Login info not found.\nPlease make sure you are logged in.",
+        err_char_not_found_desc: "Character info (UID) not found.\nPlease make sure you have created a character.",
+        modal_lang_title: "Language Settings"
+    },
+    ja: {
+        title_main: "ENDFIELD<br>CHECK-IN",
+        btn_discord_title: "Discord通知設定",
+        btn_settings_title: "設定・ログ",
+        status_header: "今日の状態",
+        last_run_prefix: "最終実行: ",
+        btn_check_now: "今すぐ確認",
+        link_site: "チェックインサイトへ ↗",
+
+        section_account: "アカウント連携状態",
+        info_no_info: "情報なし",
+        btn_sync_refresh: "連携更新",
+        btn_sync_start: "アカウント連携",
+        btn_unlink: "解除",
+        btn_reset: "初期化",
+        section_logs: "最近のログ",
+        msg_no_logs: "履歴なし",
+        btn_back: "← 戻る",
+
+        title_discord: "Discord Webhook設定",
+        btn_webhook_help: "Webhook URL取得方法",
+        label_webhook_url: "Webhook URL",
+        btn_save: "保存",
+        btn_test: "テスト",
+        status_not_set: "未設定",
+        status_active: "有効",
+        status_disabled: "無効",
+        last_edit: "最終修正: ",
+
+        status_success: "完了",
+        status_fail: "失敗",
+        status_waiting: "待機中",
+        status_checking: "確認中...",
+
+        modal_alert_title: "通知",
+        modal_confirm_title: "確認",
+        modal_error_title: "エラー",
+        modal_success_title: "成功",
+        modal_reset_title: "データ初期化",
+        btn_yes: "はい",
+        btn_no: "いいえ",
+        btn_ok: "確認",
+        btn_cancel: "キャンセル",
+
+        msg_webhook_help: "1. Discordサーバー → サーバー設定 → 連携\n2. ウェブフック → 新しいウェブフック\n3. ウェブフックURLをコピー → 上記に入力",
+        msg_sync_analyzing: "分析中...",
+        msg_req_login: "SKPORTエンドフィールドのチェックインページで実行してください。",
+        msg_sync_success: "連携完了！すべての認証情報が安全に保存されました。",
+        msg_sync_fail: "連携失敗: ",
+        msg_reset_confirm: "すべての設定とログを削除し、\nSKPORT/エンドフィールドサイトのログイン情報(Cookie)も削除します。\n\n401エラーが続く場合に使用してください。\n本当に初期化しますか？",
+        msg_reset_done: "すべてのデータが初期化されました。\nサイトに再度ログインしてください。",
+        msg_unlink_confirm: "本当に連携を解除しますか？\n自動チェックインが中断されます。",
+        msg_unlinked: "連携が解除されました。",
+        msg_webhook_disabled: "Discord連携が無効になりました。",
+        msg_webhook_invalid: "正しいDiscord Webhook URLではありません。",
+        msg_webhook_saved: "Discord Webhookが保存されました！",
+        msg_webhook_req_save: "まずWebhook URLを入力して保存してください。",
+        msg_test_sending: "送信中...",
+        msg_test_success: "テストメッセージが正常に送信されました！\nDiscordチャンネルを確認してください。",
+        msg_test_fail: "送信失敗: ",
+
+        info_linked: "連携済み",
+        info_not_linked: "未連携",
+        info_msg_not_found: "キャラクターID情報が見つかりません。<br>ログアウトして再ログイン後にお試しください。",
+
+        log_check_success: "チェックイン成功",
+        log_check_already: "すでに完了",
+        log_check_fail: "チェックイン失敗",
+        log_req_login: "アカウント連携が必要",
+        log_char_not_found: "キャラクター情報なし",
+        log_unknown_error: "不明なエラー",
+        log_discord_sent: "通知送信完了",
+        log_discord_fail: "送信失敗: ",
+        log_sync_success: "アカウント連携成功",
+        log_logout: "連携解除",
+        log_cookie_update: "Cookie更新: 認証情報を更新しました",
+        log_already_sent: "完了通知を送信しました",
+
+        embed_success_title: "🎉 エンドフィールド チェックイン完了！",
+        embed_already_title: "✅ チェックインはすでに完了しています",
+        embed_fail_title: "⚠️ エンドフィールド チェックイン失敗",
+        embed_test_success_title: "[Test] 🎉 エンドフィールド チェックイン完了！",
+        embed_test_already_title: "[Test] ✅ チェックインはすでに完了しています",
+        embed_test_fail_title: "[Test] ⚠️ エンドフィールド チェックイン失敗",
+        field_date: "📅 日時",
+        field_accumulated: "📊 累計日数",
+        field_reward: "🎁 今日の報酬",
+        field_status: "ℹ️ 状態",
+        field_error: "❌ エラー内容",
+        val_days: "日",
+        val_success_msg: "チェックイン成功",
+        val_already_msg: "今日のチェックインはすでに完了しています。",
+        val_unknown_reward: "不明な報酬",
+        val_test_item: "テストアイテム",
+        val_test_error: "テストエラーメッセージです。",
+
+        test_modal_title: "テストメッセージの種類を選択",
+        test_btn_success: "✅ チェックイン成功",
+        test_btn_already: "ℹ️ すでに完了",
+        test_btn_fail: "❌ チェックイン失敗",
+
+        prompt_title: "⚡ 自動チェックイン連携",
+        prompt_desc: "現在のアカウントで<br>自動チェックインを設定しますか？",
+        title_conn_lost: "接続切断",
+        msg_update_refresh: "拡張機能が更新されました。\nページを更新してください。",
+        msg_send_fail: "メッセージ送信失敗: ページを更新してください。",
+        title_sync_complete: "連携完了！",
+        msg_sync_complete_desc: "アカウントが正常に連携されました。",
+        msg_no_response: "応答なし",
+        title_auth_fail: "認証失敗",
+        msg_session_expired: "セッションが期限切れです。\nログアウトして再度ログインしてください。",
+        title_sync_fail: "連携失敗",
+        msg_ext_lost: "拡張機能との接続が切れました。\nページを更新してください。",
+
+        err_prefix: "エラー: ",
+        err_reset_fail: "初期化失敗",
+        err_no_role: "キャラクター情報なし",
+        err_no_webhook: "Webhook URLなし",
+        log_discord_disabled: "Discord通知無効",
+        log_today_already_sent: "本日すでに送信済み",
+        footer_text: "エンドフィールド自動チェックイン",
+        err_login_not_found: "ログイン情報が見つかりません。\nサイトにログインしているか確認してください。",
+        err_char_not_found_desc: "キャラクター情報(UID)が見つかりません。\nゲーム内にキャラクターが作成されているか確認してください。",
+        modal_lang_title: "言語設定"
+    },
+    zh: {
+        title_main: "ENDFIELD<br>CHECK-IN",
+        btn_discord_title: "Discord 通知设置",
+        btn_settings_title: "设置与日志",
+        status_header: "今日状态",
+        last_run_prefix: "上次运行: ",
+        btn_check_now: "立即检查",
+        link_site: "前往签到页面 ↗",
+
+        section_account: "账号绑定状态",
+        info_no_info: "无信息",
+        btn_sync_refresh: "刷新绑定",
+        btn_sync_start: "绑定账号",
+        btn_unlink: "解除绑定",
+        btn_reset: "重置数据",
+        section_logs: "最近日志",
+        msg_no_logs: "无记录",
+        btn_back: "← 返回",
+
+        title_discord: "Discord Webhook 设置",
+        btn_webhook_help: "如何获取 Webhook URL",
+        label_webhook_url: "Webhook URL",
+        btn_save: "保存",
+        btn_test: "测试",
+        status_not_set: "未设置",
+        status_active: "已激活",
+        status_disabled: "已禁用",
+        last_edit: "上次修改: ",
+
+        status_success: "完成",
+        status_fail: "失败",
+        status_waiting: "等待中",
+        status_checking: "检查中...",
+
+        modal_alert_title: "提示",
+        modal_confirm_title: "确认",
+        modal_error_title: "错误",
+        modal_success_title: "成功",
+        modal_reset_title: "重置数据",
+        btn_yes: "是",
+        btn_no: "否",
+        btn_ok: "确认",
+        btn_cancel: "取消",
+
+        msg_webhook_help: "1. Discord 服务器 → 服务器设置 → 集成 (Integrations)\n2. Webhooks → 新建 Webhook\n3. 复制 Webhook URL → 粘贴到上方",
+        msg_sync_analyzing: "分析中...",
+        msg_req_login: "请在 SKPORT Endfield 签到页面运行。",
+        msg_sync_success: "绑定成功！所有凭证已安全保存。",
+        msg_sync_fail: "绑定失败: ",
+        msg_reset_confirm: "这将删除此扩展程序的所有设置和日志，\n并删除 SKPORT/Endfield 网站的登录信息 (Cookies)。\n\n如果在遇到 401 错误时请使用此功能。\n确定要重置吗？",
+        msg_reset_done: "所有数据已重置。\n请重新登录网站。",
+        msg_unlink_confirm: "确定要解除绑定吗？\n自动签到将停止。",
+        msg_unlinked: "已解除绑定。",
+        msg_webhook_disabled: "Discord 集成已禁用。",
+        msg_webhook_invalid: "无效的 Discord Webhook URL。",
+        msg_webhook_saved: "Discord Webhook 已保存！",
+        msg_webhook_req_save: "请先输入并保存 Webhook URL。",
+        msg_test_sending: "发送中...",
+        msg_test_success: "测试消息发送成功！\n请检查您的 Discord 频道。",
+        msg_test_fail: "发送失败: ",
+
+        info_linked: "已绑定",
+        info_not_linked: "未绑定",
+        info_msg_not_found: "未找到角色ID信息。<br>请退出登录并重新登录后再试。",
+
+        log_check_success: "签到成功",
+        log_check_already: "已完成",
+        log_check_fail: "签到失败",
+        log_req_login: "需绑定账号",
+        log_char_not_found: "未找到角色信息",
+        log_unknown_error: "未知错误",
+        log_discord_sent: "通知已发送",
+        log_discord_fail: "发送失败: ",
+        log_sync_success: "账号绑定成功",
+        log_logout: "解除绑定",
+        log_cookie_update: "Cookie更新: 凭证已刷新",
+        log_already_sent: "已发送完成通知",
+
+        embed_success_title: "🎉 Endfield 签到完成！",
+        embed_already_title: "✅ 签到已完成",
+        embed_fail_title: "⚠️ Endfield 签到失败",
+        embed_test_success_title: "[Test] 🎉 Endfield 签到完成！",
+        embed_test_already_title: "[Test] ✅ 签到已完成",
+        embed_test_fail_title: "[Test] ⚠️ Endfield 签到失败",
+        field_date: "📅 日期",
+        field_accumulated: "📊 累计天数",
+        field_reward: "🎁 今日奖励",
+        field_status: "ℹ️ 状态",
+        field_error: "❌ 错误详情",
+        val_days: "天",
+        val_success_msg: "签到成功",
+        val_already_msg: "今日签到已完成。",
+        val_unknown_reward: "未知奖励",
+        val_test_item: "测试物品",
+        val_test_error: "这是一条测试错误消息。",
+
+        test_modal_title: "选择测试消息类型",
+        test_btn_success: "✅ 签到成功",
+        test_btn_already: "ℹ️ 已完成",
+        test_btn_fail: "❌ 签到失败",
+
+        prompt_title: "⚡ 自动签到账号绑定",
+        prompt_desc: "是否使用当前登录的账号<br>设置自动签到？",
+        title_conn_lost: "连接断开",
+        msg_update_refresh: "扩展程序已更新。\n请刷新页面。",
+        msg_send_fail: "消息发送失败: 请刷新页面。",
+        title_sync_complete: "绑定完成！",
+        msg_sync_complete_desc: "账号绑定成功。",
+        msg_no_response: "无响应",
+        title_auth_fail: "认证失败",
+        msg_session_expired: "登录会话已过期。\n请退出并重新登录。",
+        title_sync_fail: "绑定失败",
+        msg_ext_lost: "扩展程序连接断开。\n请刷新页面。",
+
+        err_prefix: "错误: ",
+        err_reset_fail: "重置失败",
+        err_no_role: "无角色信息",
+        err_no_webhook: "无 Webhook URL",
+        log_discord_disabled: "Discord 通知已禁用",
+        log_today_already_sent: "今日已发送",
+        footer_text: "Endfield 自动签到",
+        err_login_not_found: "找不到登录信息。\n请确认您是否已登录网站。",
+        err_char_not_found_desc: "找不到角色信息 (UID)。\n请确认游戏中是否已创建角色。",
+        modal_lang_title: "语言设置"
     }
 };
 
 class I18nService {
     constructor() {
         this.language = 'ko';
+        this.hasListener = false;
     }
 
     async init() {
-        chrome.storage.onChanged.addListener((changes, area) => {
-            if (area === 'local' && changes.language) {
-                this.language = changes.language.newValue || 'ko';
-            }
-        });
+        if (!this.hasListener) {
+            chrome.storage.onChanged.addListener((changes, area) => {
+                if (area === 'local' && changes.language) {
+                    this.language = changes.language.newValue || 'ko';
+                }
+            });
+            this.hasListener = true;
+        }
 
         return new Promise((resolve) => {
             chrome.storage.local.get(['language'], (result) => {
-                if (result.language && (result.language === 'ko' || result.language === 'en')) {
+                if (result.language && ['ko', 'en', 'ja', 'zh'].includes(result.language)) {
                     this.language = result.language;
                 }
                 resolve(this.language);
@@ -254,7 +528,7 @@ class I18nService {
     }
 
     async setLanguage(lang) {
-        if (lang !== 'ko' && lang !== 'en') return;
+        if (!['ko', 'en', 'ja', 'zh'].includes(lang)) return;
         this.language = lang;
         await chrome.storage.local.set({ language: lang });
     }
@@ -269,7 +543,10 @@ class I18nService {
     }
 
     get locale() {
-        return this.language === 'ko' ? 'ko-KR' : 'en-US';
+        if (this.language === 'ko') return 'ko-KR';
+        if (this.language === 'ja') return 'ja-JP';
+        if (this.language === 'zh') return 'zh-CN';
+        return 'en-US';
     }
 }
 

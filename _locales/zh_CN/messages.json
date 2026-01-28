@@ -1,0 +1,10 @@
+{
+    "extName": {
+        "message": "明日方舟：终末地 自动签到",
+        "description": "Extension Name"
+    },
+    "extDescription": {
+        "message": "明日方舟：终末地 每日自动签到",
+        "description": "Extension Description"
+    }
+}
