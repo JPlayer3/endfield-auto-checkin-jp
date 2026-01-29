@@ -566,10 +566,8 @@ class DiscordWebhookService {
 
         if (fetched.code === "SUCCESS") {
             resultData.rawData = fetched.rawData;
-        } else if (fetched.code === "NOT_LOGGED_IN") {
-            return { code: "GUEST" };
         } else {
-            return { code: "GUEST" };
+            resultData.rawData = {};
         }
 
         const now = new Date();
@@ -614,6 +612,35 @@ class DiscordWebhookService {
         }
 
         return { code: "SUCCESS", embed: embed };
+    }
+
+    async sendTestWebhook(testType) {
+        try {
+            const config = await this.store.getDiscordConfig();
+            if (!config || !config.webhookUrl) {
+                return { code: "FAIL", msg: i18n.get('err_no_webhook') };
+            }
+
+            const genResult = await this.generateTestEmbed(testType);
+            if (genResult.code !== "SUCCESS" || !genResult.embed) {
+                return { code: "FAIL", msg: genResult.msg || "Failed to generate embed" };
+            }
+
+            const response = await fetch(config.webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ embeds: [genResult.embed] })
+            });
+
+            if (response.ok) {
+                return { code: "SUCCESS" };
+            } else {
+                const errorText = await response.text();
+                return { code: "FAIL", msg: `HTTP ${response.status}: ${errorText}` };
+            }
+        } catch (error) {
+            return { code: "ERROR", msg: error.message };
+        }
     }
 }
 
@@ -675,6 +702,10 @@ class CheckInController {
                 }
                 else if (msg.action === "generateTestEmbed") {
                     const result = await this.discordService.generateTestEmbed(msg.testType);
+                    sendResponse(result);
+                }
+                else if (msg.action === "sendTestWebhook") {
+                    const result = await this.discordService.sendTestWebhook(msg.testType);
                     sendResponse(result);
                 }
                 else {

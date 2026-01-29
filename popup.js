@@ -369,37 +369,15 @@ async function handleTestWebhook() {
     btn.disabled = true;
 
     try {
-        let testEmbed = null;
-
-        try {
-            const bgResponse = await new Promise((resolve) => {
-                chrome.runtime.sendMessage({ action: "generateTestEmbed", testType: testType }, resolve);
-            });
-
-            if (bgResponse && bgResponse.code === "SUCCESS" && bgResponse.embed) {
-                testEmbed = bgResponse.embed;
-            }
-        } catch (e) {
-            console.log("Background generation failed, falling back to local:", e);
-        }
-
-        if (!testEmbed) {
-            testEmbed = createTestEmbed(testType, data.accountInfo);
-        }
-
-        const response = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ embeds: [testEmbed] })
+        const response = await new Promise((resolve) => {
+            chrome.runtime.sendMessage({ action: "sendTestWebhook", testType: testType }, resolve);
         });
 
-        if (response.ok) {
+        if (response && response.code === "SUCCESS") {
             await Modal.alert(i18n.get('msg_test_success'), i18n.get('modal_success_title'));
         } else {
-            const errorText = await response.text();
-            await Modal.alert(i18n.get('msg_test_fail') + `${response.status} ${response.statusText}\n${errorText}`, i18n.get('modal_error_title'));
+            const errorMsg = response ? response.msg : "Unknown Error";
+            await Modal.alert(i18n.get('msg_test_fail') + errorMsg, i18n.get('modal_error_title'));
         }
     } catch (error) {
         await Modal.alert(i18n.get('msg_test_fail') + error.message, i18n.get('modal_error_title'));
