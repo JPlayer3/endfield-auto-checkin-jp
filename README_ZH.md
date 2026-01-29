@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/Version-1.3.1-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.3.1)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/)
+[![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
 
 [![GitBook](https://img.shields.io/badge/Docs-GitBook-3884FF?style=for-the-badge&logo=gitbook&logoColor=white)](https://kgyujins-organization.gitbook.io/endfield/)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/xog9)
@@ -68,12 +68,13 @@ Endfield Auto Check-in 是一款基于 Chromium 的浏览器扩展，
 
 ## 🚀 安装方法
 
-1. 点击本仓库顶部的 **[Code]** 按钮 → 选择 **Download ZIP** 下载
-2. 解压下载的文件
-3. 在浏览器地址栏输入 `chrome://extensions` 并回车
-4. 打开右上角的 **[开发者模式]** 开关
-5. 点击左上角的 **[加载已解压的扩展程序]**
-6. 选择解压后的文件夹即可完成安装！
+您可以直接从 Chrome 应用商店安装。
+
+[![Chrome Web Store](https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/i7m3Xbmb9d24ZkfbZ9rA.png)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
+
+1. 前往 [Chrome 应用商店页面](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)。
+2. 点击 **[添加至 Chrome]** 按钮。
+3. 安装完成后，点击浏览器右上角的拼图图标🧩，固定📌 **Endfield Auto Check-in** 以便使用。
 
 <br/>
 

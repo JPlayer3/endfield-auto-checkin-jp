@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/Version-1.3.1-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.3.1)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/)
+[![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
 
 [![GitBook](https://img.shields.io/badge/Docs-GitBook-3884FF?style=for-the-badge&logo=gitbook&logoColor=white)](https://kgyujins-organization.gitbook.io/endfield/)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/xog9)
@@ -68,12 +68,13 @@ automatically performs the daily check-in for
 
 ## 🚀 Installation
 
-1. Click the **[Code]** button at the top of this repo → Select **Download ZIP**
-2. Extract the downloaded archive
-3. Open `chrome://extensions` in your browser address bar
-4. Enable **[Developer mode]** toggle at the top right
-5. Click **[Load unpacked]** at the top left
-6. Select the extracted folder to finish installation!
+You can install it directly from the Chrome Web Store.
+
+[![Chrome Web Store](https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/i7m3Xbmb9d24ZkfbZ9rA.png)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
+
+1. Go to the [Chrome Web Store Page](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga).
+2. Click **[Add to Chrome]**.
+3. Once installed, click the puzzle icon🧩 in the top right and pin📌 **Endfield Auto Check-in**.
 
 <br/>
 

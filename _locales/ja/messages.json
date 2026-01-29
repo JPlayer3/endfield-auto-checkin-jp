@@ -4,7 +4,7 @@
         "description": "Extension Name"
     },
     "extDescription": {
-        "message": "アークナイツ：エンドフィールドの毎日の自動チェックイン",
+        "message": "アークナイツ：エンドフィールドのデイリーチェックイン（出席）を自動化し、毎日報酬を受け取ります。バックグラウンドで動作します。",
         "description": "Extension Description"
     }
 }

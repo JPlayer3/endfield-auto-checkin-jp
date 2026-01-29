@@ -4,7 +4,7 @@
         "description": "Extension Name"
     },
     "extDescription": {
-        "message": "明日方舟：终末地 每日自动签到",
+        "message": "明日方舟：终末地 (Endfield) 每日自动签到与奖励领取工具。后台运行，不错过每一天。",
         "description": "Extension Description"
     }
 }

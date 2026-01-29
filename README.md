@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/Version-1.3.1-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.3.1)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/)
+[![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
 
 [![GitBook](https://img.shields.io/badge/Docs-GitBook-3884FF?style=for-the-badge&logo=gitbook&logoColor=white)](https://kgyujins-organization.gitbook.io/endfield/)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/xog9)
@@ -12,14 +12,6 @@
 <br/>
 
 [🇺🇸 English](./README_EN.md) | [🇯🇵 日本語](./README_JA.md) | [🇨🇳 简体中文](./README_ZH.md)
-
-<br/>
-
-📢 알림
-
-현재 확장 프로그램은 크롬 웹 스토어 검토 대기 중입니다.  
-승인이 완료되기 전까지는 아래의 `[설치 방법]`을 통해 수동으로 설치해 주세요.  
-(추후 스토어 등록이 완료되면 다운로드 링크가 게시될 예정입니다)
 
 <br/>
 
@@ -80,12 +72,13 @@ Endfield Auto Check-in은
 
 ## 🚀 설치 방법
 
-1. 이 저장소의 상단 **[Code]** 버튼 클릭 → **Download ZIP** 선택하여 다운로드
-2. 다운로드한 파일 압축 해제
-3. 브라우저 주소창에 `chrome://extensions` 입력하여 이동
-4. 우측 상단 **[개발자 모드]** 스위치 켜기
-5. 좌측 상단 **[압축 해제된 확장 프로그램 로드]** 클릭
-6. 압축 해제한 폴더 선택하면 설치 완료!
+크롬 웹 스토어에서 간편하게 설치할 수 있습니다.
+
+[![Chrome Web Store](https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/i7m3Xbmb9d24ZkfbZ9rA.png)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
+
+1. [Chrome 웹 스토어 페이지](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)로 이동합니다.
+2. **[Chrome에 추가]** 버튼을 클릭합니다.
+3. 설치가 완료되면 브라우저 우측 상단 퍼즐 아이콘🧩을 눌러 **Endfield Auto Check-in**을 고정📌하면 편리합니다.
 
 <br/>
 
