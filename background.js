@@ -309,6 +309,38 @@ class CheckInService {
 class DiscordWebhookService {
     constructor(store) { this.store = store; }
 
+    async init() {
+        await this.setupNetRules();
+    }
+
+    async setupNetRules() {
+        const ruleId = 1;
+        await chrome.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: [ruleId],
+            addRules: [{
+                "id": ruleId,
+                "priority": 1,
+                "action": {
+                    "type": "modifyHeaders",
+                    "requestHeaders": [
+                        { "header": "Origin", "operation": "remove" },
+                        { "header": "Referer", "operation": "remove" }
+                    ]
+                },
+                "condition": {
+                    "urlFilter": "discord.com",
+                    "resourceTypes": ["xmlhttprequest"]
+                }
+            }]
+        });
+    }
+
+    getWebhookHeaders() {
+        return {
+            'Content-Type': 'application/json'
+        };
+    }
+
     async sendAttendanceNotification(attendanceData, serverDate) {
         try {
             const config = await this.store.getDiscordConfig();
@@ -325,7 +357,8 @@ class DiscordWebhookService {
             const embed = await this.formatAttendanceEmbed(attendanceData, serverDate);
             const response = await fetch(config.webhookUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this.getWebhookHeaders(),
+                referrerPolicy: 'no-referrer',
                 body: JSON.stringify({ embeds: [embed] })
             });
 
@@ -384,7 +417,8 @@ class DiscordWebhookService {
 
             await fetch(config.webhookUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this.getWebhookHeaders(),
+                referrerPolicy: 'no-referrer',
                 body: JSON.stringify({ embeds: [embed] })
             });
         } catch (e) {
@@ -410,7 +444,8 @@ class DiscordWebhookService {
 
             await fetch(config.webhookUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this.getWebhookHeaders(),
+                referrerPolicy: 'no-referrer',
                 body: JSON.stringify({ embeds: [embed] })
             });
 
@@ -628,7 +663,7 @@ class DiscordWebhookService {
 
             const response = await fetch(config.webhookUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this.getWebhookHeaders(),
                 body: JSON.stringify({ embeds: [genResult.embed] })
             });
 
@@ -651,6 +686,7 @@ class CheckInController {
         this.discordService = new DiscordWebhookService(this.store);
     }
     async init() {
+        await this.discordService.init();
         this.registerListeners();
 
         await i18n.init();
