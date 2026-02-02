@@ -2,7 +2,7 @@
 
 # Endfield Auto Check-in
 
-[![Version](https://img.shields.io/badge/Version-1.3.2-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.3.2)
+[![Version](https://img.shields.io/badge/Version-1.4.0-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.4.0)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
 
@@ -30,7 +30,7 @@ Endfield Auto Check-in 是一款基于 Chromium 的浏览器扩展，
 | 项目 | 说明 |
 | :--- | :--- |
 | **平台** | Chrome, Edge, Whale 等基于 Chromium 的浏览器 |
-| **版本** | 1.3.2 |
+| **版本** | 1.4.0 |
 | **运行条件** | SKPORT 游戏官网登录状态 |
 | **运行方式** | 本地浏览器后台自动化 |
 | **外部通信** | 无 (除用户设置的 Discord 通知外) |

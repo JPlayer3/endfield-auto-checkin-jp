@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderAccountInfo(data.accountInfo);
     renderDiscordConfig(data.discordConfig);
 
+    checkAnnouncement();
+
     document.getElementById('btnLang').addEventListener('click', async () => {
         const selectedLang = await showLanguageModal();
         if (selectedLang) {
@@ -111,7 +113,11 @@ class Modal {
         return new Promise((resolve) => {
             this.resolve = resolve;
             this.titleEl.innerText = title;
-            this.msgEl.innerText = msg;
+            if (this.useHtml) {
+                this.msgEl.innerHTML = msg;
+            } else {
+                this.msgEl.innerText = msg;
+            }
 
             if (isConfirm) {
                 this.btnCancel.style.display = 'block';
@@ -138,7 +144,13 @@ class Modal {
         return await this.show(title || i18n.get('modal_alert_title'), msg, false);
     }
 
-    static async confirm(msg, title = null) {
+    static async alert(msg, title = null, useHtml = false) {
+        this.useHtml = useHtml;
+        return await this.show(title || i18n.get('modal_alert_title'), msg, false);
+    }
+
+    static async confirm(msg, title = null, useHtml = false) {
+        this.useHtml = useHtml;
         return await this.show(title || i18n.get('modal_confirm_title'), msg, true);
     }
 }
@@ -552,4 +564,54 @@ function applyI18n() {
 
     const btnLang = document.getElementById('btnLang');
     if (btnLang) btnLang.innerText = i18n.lang.toUpperCase();
+}
+
+async function checkAnnouncement() {
+    try {
+        const gistId = "f866bc3f043a0da3ddd231891bb1d6f7";
+        const apiUrl = `https://api.github.com/gists/${gistId}?t=${new Date().getTime()}`;
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.files || !data.files['extension-announce-modal.json']) return;
+
+        const fileContent = data.files['extension-announce-modal.json'].content;
+        const announceData = JSON.parse(fileContent);
+
+        if (!announceData.active) return;
+
+        const storageData = await storage.get('lastSeenAnnouncementDate');
+        const lastSeen = storageData.lastSeenAnnouncementDate;
+        const updatedAt = data.updated_at;
+
+        if (lastSeen === updatedAt) return;
+
+        const lang = i18n.lang || 'ko';
+        const content = announceData.contents[lang] || announceData.contents['ko'];
+
+        if (!content) return;
+
+        let messageHtml = content.message.replace(/\n/g, '<br>');
+
+        const linkTitles = {
+            'ko': "🔗 링크",
+            'en': "🔗 Link",
+            'ja': "🔗 リンク",
+            'zh': "🔗 链接"
+        };
+        const linkTitle = linkTitles[lang] || linkTitles['en'];
+
+        if (content.link) {
+            messageHtml += `<br><br><a href="${content.link}" target="_blank" style="color: #4A90E2; text-decoration: none; font-weight: bold;">${linkTitle}</a>`;
+        }
+
+        await Modal.alert(messageHtml, content.title, true);
+
+        await storage.set({ lastSeenAnnouncementDate: updatedAt });
+
+    } catch (e) {
+        console.log("Announcement check failed:", e);
+    }
 }
