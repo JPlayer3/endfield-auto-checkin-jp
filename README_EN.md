@@ -2,16 +2,17 @@
 
 # Endfield Auto Check-in
 
-[![Version](https://img.shields.io/badge/Version-1.4.0-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.4.0)
+[![Version](https://img.shields.io/badge/Version-1.5.0-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.5.0)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
-
-[![GitBook](https://img.shields.io/badge/Docs-GitBook-3884FF?style=for-the-badge&logo=gitbook&logoColor=white)](https://kgyujins-organization.gitbook.io/endfield/)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/xog9)
 
 <br/>
 
 [🇰🇷 Korean](./README.md) | [🇯🇵 日本語](./README_JA.md) | [🇨🇳 简体中文](./README_ZH.md)
+
+<br/>
+
+---
 
 <br/>
 
@@ -30,18 +31,18 @@ automatically performs the daily check-in for
 | Feature | Description |
 | :--- | :--- |
 | **Platform** | Chromium-based browsers (Chrome, Edge, Whale, etc.) |
-| **Version** | 1.4.0 |
+| **Version** | 1.5.0 |
 | **Condition** | Must be logged in to SKPORT website |
-| **Execution** | Local background automation |
+| **Execution** | Local background automation (Hidden Window) |
 | **Network** | None (Except optional Discord Webhook) |
 
-<br/>
+
 
 ## ✨ Key Features
 
 ### 👻 Invisible Auto Check-in
-- **Silent Automation**: Runs in the background on browser startup.
-- Does not interrupt your workflow or cover the screen.
+- **Hidden Automation**: A minimized window opens briefly to perform the check-in and closes automatically.
+- **Safe & Secure**: Simulates user interaction instead of using sensitive APIs directly.
 
 ### ⏰ Smart Scheduling
 - **Intelligent Timer**: Automatically calculates the game server reset time (UTC+8 00:00).
@@ -49,38 +50,26 @@ automatically performs the daily check-in for
 
 ### 🔔 Discord Notification
 - **Webhook Integration**: receive success/failure notifications directly in your Discord.
-- **Rich Embeds**: Displays reward thumbnails and cumulative attendance days.
+- **Rich Embeds**: Displays actual reward names and cumulative attendance days.
 - **Test Mode**: Verify your webhook setup instantly.
 
 ### 🔒 Secure & Private
 - **Local Execution**: All operations run locally within your browser.
 - No personal data is sent to external servers (except optional Discord Webhook).
 
-### ⚡ Instant Check-in on Sync
-- **Immediate Action**: Triggers a check-in attempt immediately when you sync/update your account credentials.
-
 ### 🛡️ Status Badge
 - Visual status indicator on the extension icon:
   - `(No Badge)` : ✅ Check-in Complete
-  - `X` (Red) : ❌ Login Required or Error
+  - `...` (Orange) : ⏳ Check-in in Progress
+  - `!` (Red) : ❌ Error
 
 <br/>
-
-## 🚀 Installation
-
-You can install it directly from the Chrome Web Store.
-
-[![Chrome Web Store](https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/i7m3Xbmb9d24ZkfbZ9rA.png)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
-
-1. Go to the [Chrome Web Store Page](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga).
-2. Click **[Add to Chrome]**.
-3. Once installed, click the puzzle icon🧩 in the top right and pin📌 **Endfield Auto Check-in**.
 
 <br/>
 
 ## 📖 Usage
 
-1. **One-time Login**: Log in to the Arknights: Endfield check-in page on SKPORT.
+1. **Login**: Log in to the Arknights: Endfield check-in page on SKPORT.
 2. **Auto Run**: The extension will automatically check in every time you open the browser.
 3. **Check Status**: Click the extension icon to view logs or status.
     - You can also use the `CHECK NOW` button for manual execution.
@@ -90,20 +79,17 @@ You can install it directly from the Chrome Web Store.
 ## 🔧 Troubleshooting
 
 > [!WARNING]
-> **Is the "Failure" or "X" badge persistent?**
+> **Is the "Failure" or "!" badge persistent?**
 
-This may be due to session expiration or corrupted data. Please follow these steps:
-
-1. Click the extension icon
-2. Click the **⚙️ Settings (Gear)** icon at the top right
-3. Click **[Reset Data]** (This safely clears all stored extension data)
-4. When the SKPORT site reloads, **Log in again**
-5. Follow the popup to retry **[Account Sync]**
+1. Check if you are logged out of the SKPORT website.
+2. Try clicking `CHECK NOW` manually.
+3. If issues persist, go to Settings (Gear icon) and click **[Reset Data]**.
 
 <br/>
 
 ## ⚖️ Disclaimer & License
 
 - This project is an unofficial extension.
-- The user is solely responsible for any issues arising from the use of this program.
+- **The user is solely responsible for any issues (including account bans) arising from the use of this program.**
+- **Use at your own risk.**
 - **MIT License**

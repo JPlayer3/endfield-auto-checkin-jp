@@ -2,11 +2,8 @@
 
 # Endfield Auto Check-in
 
-[![Version](https://img.shields.io/badge/Version-1.4.0-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.4.0)
+[![Version](https://img.shields.io/badge/Version-1.5.0-blue?style=flat-square)](https://github.com/kgyujin/endfield-auto-checkin/releases/tag/v1.5.0)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Chrome%20%7C%20Edge%20%7C%20Whale-orange?style=flat-square)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
-
-[![GitBook](https://img.shields.io/badge/Docs-GitBook-3884FF?style=for-the-badge&logo=gitbook&logoColor=white)](https://kgyujins-organization.gitbook.io/endfield/)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/xog9)
 
 <br/>
@@ -15,11 +12,15 @@
 
 <br/>
 
+---
+
+<br/>
+
 **アークナイツ：エンドフィールド (SKPORT) 自動チェックイン拡張機能**
 
 Endfield Auto Check-inは、  
 **アークナイツ：エンドフィールド (SKPORT)** の毎日のチェックインを  
-ログイン状態でバックグラウンドにて自動的に実行するChromiumベースのブラウザ拡張機能です。
+**ログイン状態でバックグラウンドにて自動的に実行する**Chromiumベースのブラウザ拡張機能です。
 
 </div>
 
@@ -30,18 +31,18 @@ Endfield Auto Check-inは、
 | 項目 | 詳細 |
 | :--- | :--- |
 | **プラットフォーム** | Chrome, Edge, Whale などのChromiumベースブラウザ |
-| **バージョン** | 1.4.0 |
+| **バージョン** | 1.5.0 |
 | **動作条件** | SKPORTゲームサイトへのログイン状態 |
-| **実行方式** | ローカルブラウザバックグラウンド自動化 |
+| **実行方式** | ローカルブラウザバックグラウンド自動化 (Hidden Window) |
 | **外部通信** | なし (ただし、ユーザー設定時のDiscord通知を除く) |
 
-<br/>
+
 
 ## ✨ 主な機能
 
 ### 👻 見えない自動チェックイン
-- **サイレント自動化**: ブラウザ起動時にバックグラウンドで静かに実行されます。
-- 作業を妨げたり、画面を遮ることはありません。
+- **隠しウィンドウ自動化**: チェックイン時に最小化されたウィンドウが一瞬開き、完了後に自動で閉じます。
+- **安全なシミュレーション**: APIを直接操作せず、実際のクリック動作をシミュレートするため安全です。
 
 ### ⏰ インテリジェントスケジューリング
 - **スマートタイマー**: ゲームサーバーのリセット時間 (UTC+8 00:00) を自動的に計算します。
@@ -49,38 +50,26 @@ Endfield Auto Check-inは、
 
 ### 🔔 Discord通知
 - **Webhook連携**: チェックインの成功/失敗をDiscordに直接通知します。
-- **リッチEmbed**: 獲得した報酬の画像や累積チェックイン日数も表示されます。
+- **リッチEmbed**: 実際の報酬名と累積チェックイン日数も表示されます。
 - **テストモード**: Webhook設定が正しく動作するかすぐに確認できます。
 
 ### 🔒 安全なローカル実行
 - **ローカル実行**: すべての動作はブラウザ内部でのみ行われます。
 - 設定したDiscord Webhook以外に個人情報を外部へ送信することはありません。
 
-### ⚡ 同期時に即時実行
-- **即時アクション**: アカウント連携（更新）と同時にチェックインを試行し、利便性を高めました。
-
 ### 🛡️ ステータスバッジ
 - 拡張機能アイコンで状態を直感的に確認できます:
   - `(バッジなし)` : ✅ チェックイン完了
-  - `X` (赤色) : ❌ ログインが必要、またはエラー発生
+  - `...` (オレンジ) : ⏳ チェックイン進行中
+  - `!` (赤色) : ❌ エラー発生
 
 <br/>
-
-## 🚀 インストール方法
-
-Chrome ウェブストアから簡単にインストールできます。
-
-[![Chrome Web Store](https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/i7m3Xbmb9d24ZkfbZ9rA.png)](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)
-
-1. [Chrome ウェブストアページ](https://chromewebstore.google.com/detail/%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C-%EC%9E%90%EB%8F%99-%EC%B6%9C%EC%84%9D%EC%B2%B4%ED%81%AC/djobkkgcmfhjbjodcdidelbmpmgalgga)にアクセスします。
-2. **[Chromeに追加]** ボタンをクリックします。
-3. インストール完了後、ブラウザ右上のパズルアイコン🧩をクリックし、**Endfield Auto Check-in**を固定📌すると便利です。
 
 <br/>
 
 ## 📖 使い方
 
-1. **初回ログイン**: SKPORTエンドフィールドのチェックインページにログインしてください。
+1. **ログイン**: SKPORTエンドフィールドのチェックインページにログインしてください。
 2. **自動実行**: 以降、ブラウザを開くたびに拡張機能が自動でチェックインを行います。
 3. **状態確認**: 拡張機能アイコンをクリックして、実行ログや状態を確認できます。
     - `CHECK NOW` ボタンで手動チェックインも可能です。
@@ -90,20 +79,17 @@ Chrome ウェブストアから簡単にインストールできます。
 ## 🔧 トラブルシューティング
 
 > [!WARNING]
-> **「失敗」状態や「X」バッジが消えませんか？**
+> **「失敗」状態や「!」バッジが消えませんか？**
 
-ログインセッション切れやデータの不整合が原因の可能性があります。以下の手順を試してください。
-
-1. 拡張機能アイコンをクリック
-2. 右上の **⚙️ 設定(歯車)** アイコンをクリック
-3. **[データ初期化]** ボタンをクリック（すべてのデータが安全にリセットされます）
-4. SKPORTサイトがリロードされたら、**再度ログイン**
-5. ポップアップの案内に従って **[アカウント連携]** を再試行
+1. SKPORTサイトからログアウトされていないか確認してください。
+2. `CHECK NOW` をクリックして手動で再試行してください。
+3. 問題が解決しない場合は、設定(歯車アイコン) > **[データ初期化]** を実行してください。
 
 <br/>
 
 ## ⚖️ 免責事項とライセンス
 
 - 本プロジェクトは非公式の拡張機能です。
-- 本プログラムの使用により発生した問題について、ユーザー本人が全責任を負うものとします。
+- **本プログラムの使用により発生したすべての問題（アカウント停止など）について、ユーザー本人が全責任を負うものとします。**
+- **Use at your own risk.**
 - **MIT License**

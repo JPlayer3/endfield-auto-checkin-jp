@@ -38,7 +38,9 @@
                 <h2 class="glow-text" data-i18n-html="title_main">ENDFIELD<br>CHECK-IN</h2>
             </div>
             <div class="header-controls">
-                <button id="btnLang" class="icon-btn" style="font-size: 11px; width: 28px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;" title="언어 변경 / Change Language">KO</button>
+                <button id="btnLang" class="icon-btn"
+                    style="font-size: 11px; width: 28px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;"
+                    title="언어 변경 / Change Language">KO</button>
                 <button id="btnDiscord" class="icon-btn" title="디스코드 알림 설정" data-i18n-title="btn_discord_title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg">
@@ -60,25 +62,18 @@
             <div class="status-card">
                 <div class="status-header" data-i18n="status_header">TODAY'S STATUS</div>
                 <div id="statusDisplay" class="status-value">-</div>
+                <div id="accDaysDisplay" class="status-time" style="font-size: 11px; margin-bottom: 2px;"></div>
                 <div id="lastRunDisplay" class="status-time">마지막 실행: -</div>
             </div>
             <button id="runNowBtn" class="btn-primary full-width" data-i18n="btn_check_now">CHECK NOW</button>
-            <a href="https://game.skport.com/endfield/sign-in" target="_blank" class="site-link" data-i18n="link_site">출석 사이트 바로가기 ↗</a>
+            <a href="https://game.skport.com/endfield/sign-in" target="_blank" class="site-link"
+                data-i18n="link_site">출석 사이트 바로가기 ↗</a>
 
 
         </div>
 
         <div id="settingsView" style="display: none;">
-            <div class="section-title" data-i18n="section_account">계정 연동 상태</div>
 
-            <div class="sync-box">
-                <div id="userInfo" class="sync-info" data-i18n="info_no_info">정보 없음</div>
-                <div class="btn-group-row">
-                    <button id="btnSync" class="btn-primary small" data-i18n="btn_sync_refresh">연동 갱신</button>
-                    <button id="btnUnlink" class="btn-danger" data-i18n="btn_unlink">해제</button>
-                    <button id="btnReset" class="btn-danger-outline" data-i18n="btn_reset">초기화</button>
-                </div>
-            </div>
 
             <div class="section-title" data-i18n="section_logs">최근 기록</div>
             <div id="logList" class="log-list">
@@ -91,7 +86,8 @@
         <div id="discordView" style="display: none;">
             <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
                 <span data-i18n="title_discord">디스코드 웹훅 설정</span>
-                <button id="btnWebhookHelp" class="icon-btn" title="웹훅 URL 얻는 방법" data-i18n-title="btn_webhook_help" style="padding: 2px;">
+                <button id="btnWebhookHelp" class="icon-btn" title="웹훅 URL 얻는 방법" data-i18n-title="btn_webhook_help"
+                    style="padding: 2px;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
                         xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -102,17 +98,19 @@
 
             <div class="sync-box" style="flex-direction: column; align-items: stretch;">
                 <div style="margin-bottom: 16px;">
-                    <label
-                        style="display: block; font-size: 12px; color: #999; margin-bottom: 6px; font-weight: 600;" data-i18n="label_webhook_url">웹훅
+                    <label style="display: block; font-size: 12px; color: #999; margin-bottom: 6px; font-weight: 600;"
+                        data-i18n="label_webhook_url">웹훅
                         URL</label>
                     <input type="text" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..."
                         style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 12px; box-sizing: border-box;">
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                    <button id="btnSaveWebhook" class="btn-primary" style="flex: 1; padding: 10px;" data-i18n="btn_save">저장</button>
+                    <button id="btnSaveWebhook" class="btn-primary" style="flex: 1; padding: 10px;"
+                        data-i18n="btn_save">저장</button>
                     <button id="btnTestWebhook" class="btn-primary"
-                        style="flex: 1; padding: 10px; background: rgba(88, 101, 242, 0.3); color: #5865F2;" data-i18n="btn_test">테스트</button>
+                        style="flex: 1; padding: 10px; background: rgba(88, 101, 242, 0.3); color: #5865F2;"
+                        data-i18n="btn_test">테스트</button>
                 </div>
 
                 <div id="discordStatus" style="font-size: 11px; color: #999; text-align: center; padding: 8px 0;">

@@ -1,18 +1,16 @@
 {
     "manifest_version": 3,
     "name": "__MSG_extName__",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "description": "__MSG_extDescription__",
     "default_locale": "ko",
     "permissions": [
         "storage",
         "alarms",
-        "cookies",
         "declarativeNetRequest"
     ],
     "host_permissions": [
         "https://*.skport.com/*",
-        "https://*.gryphline.com/*",
         "https://*.discord.com/*",
         "https://*.discordapp.com/*",
         "https://api.github.com/*"
@@ -32,8 +30,17 @@
     "content_scripts": [
         {
             "matches": [
-                "https://*.skport.com/*",
-                "https://*.gryphline.com/*"
+                "https://*.skport.com/*"
+            ],
+            "js": [
+                "inject.js"
+            ],
+            "run_at": "document_start",
+            "world": "MAIN"
+        },
+        {
+            "matches": [
+                "https://*.skport.com/*"
             ],
             "js": [
                 "i18n.js",

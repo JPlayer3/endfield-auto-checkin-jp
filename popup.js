@@ -4,11 +4,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     await i18n.init();
     applyI18n();
 
-    const data = await storage.get(['lastStatus', 'lastCheckDate', 'lastCheckTime', 'accountInfo', 'checkInLogs', 'isRunning', 'discordConfig']);
+    const data = await storage.get(['lastStatus', 'lastCheckDate', 'lastCheckTime', 'lastSignCount', 'accountInfo', 'checkInLogs', 'isRunning', 'discordConfig']);
 
     renderStatus(data);
     renderLogs(data.checkInLogs);
-    renderAccountInfo(data.accountInfo);
+
     renderDiscordConfig(data.discordConfig);
 
     checkAnnouncement();
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             storage.get(['lastStatus', 'lastCheckTime', 'accountInfo', 'checkInLogs', 'discordConfig'], (d) => {
                 renderStatus(d);
                 renderLogs(d.checkInLogs);
-                renderAccountInfo(d.accountInfo);
+
                 renderDiscordConfig(d.discordConfig);
             });
         }
@@ -70,10 +70,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('mainView').style.display = 'flex';
     });
 
-    document.getElementById('btnSync').addEventListener('click', handleSyncClick);
-
-    document.getElementById('btnReset').addEventListener('click', handleReset);
-
     document.getElementById('runNowBtn').addEventListener('click', handleManualRun);
     document.getElementById('btnSaveWebhook').addEventListener('click', handleSaveWebhook);
     document.getElementById('btnTestWebhook').addEventListener('click', handleTestWebhook);
@@ -89,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         storage.get(null, (newData) => {
             renderStatus(newData);
             if (changes.checkInLogs) renderLogs(newData.checkInLogs);
-            if (changes.accountInfo) renderAccountInfo(newData.accountInfo);
+
             if (changes.discordConfig) renderDiscordConfig(newData.discordConfig);
         });
     });
@@ -157,50 +153,6 @@ class Modal {
 
 Modal.init();
 
-async function handleSyncClick() {
-    const btn = document.getElementById('btnSync');
-    btn.innerText = i18n.get('msg_sync_analyzing');
-    btn.disabled = true;
-
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (!tab || !tab.url || !tab.url.includes("skport.com")) {
-        await Modal.alert(i18n.get('msg_req_login'));
-        btn.innerText = i18n.get('btn_sync_refresh');
-        btn.disabled = false;
-        return;
-    }
-
-    chrome.tabs.sendMessage(tab.id, { action: "getLocalStorage" }, (response) => {
-        if (chrome.runtime.lastError) {
-            console.log("Tab message error:", chrome.runtime.lastError.message);
-        }
-        const storageData = response || {};
-
-        chrome.runtime.sendMessage({
-            action: "syncAccount",
-            storageData: storageData
-        }, async (res) => {
-            if (chrome.runtime.lastError) {
-                await Modal.alert(i18n.get('err_prefix') + chrome.runtime.lastError.message);
-                btn.innerText = i18n.get('btn_sync_refresh');
-                btn.disabled = false;
-                return;
-            }
-            btn.innerText = i18n.get('btn_sync_refresh');
-            btn.disabled = false;
-
-            if (res && res.code === "SUCCESS") {
-                renderAccountInfo(res.data);
-                storage.get(['checkInLogs'], (d) => renderLogs(d.checkInLogs));
-                await Modal.alert(i18n.get('msg_sync_success'), i18n.get('modal_success_title'));
-            } else {
-                await Modal.alert(i18n.get('msg_sync_fail') + (res ? res.msg : "Unknown Error"), i18n.get('modal_error_title'));
-            }
-        });
-    });
-}
-
 function handleManualRun() {
     chrome.runtime.sendMessage({ action: "manualRun" }, (res) => {
         if (chrome.runtime.lastError) {
@@ -210,30 +162,6 @@ function handleManualRun() {
     document.getElementById('statusDisplay').innerHTML = `<span style="color:#FF9500">${i18n.get('status_checking')}</span>`;
 }
 
-
-
-async function handleReset() {
-    const confirmed = await Modal.confirm(
-        i18n.get('msg_reset_confirm'),
-        i18n.get('modal_reset_title')
-    );
-
-    if (!confirmed) return;
-
-    chrome.runtime.sendMessage({ action: "resetData" }, async (res) => {
-        if (chrome.runtime.lastError) {
-            await Modal.alert(i18n.get('err_prefix') + chrome.runtime.lastError.message);
-            return;
-        }
-        if (res && res.code === "SUCCESS") {
-            await Modal.alert(i18n.get('msg_reset_done'), i18n.get('modal_reset_title'));
-            location.reload();
-        } else {
-            await Modal.alert(i18n.get('err_reset_fail'), i18n.get('modal_error_title'));
-        }
-    });
-}
-
 function renderStatus(data) {
     const statusEl = document.getElementById('statusDisplay');
     const timeEl = document.getElementById('lastRunDisplay');
@@ -241,7 +169,12 @@ function renderStatus(data) {
     document.getElementById('btnSettings').style.display = '';
     document.getElementById('runNowBtn').style.display = '';
 
-    if (data.lastStatus === "SUCCESS") {
+    document.getElementById('runNowBtn').style.display = '';
+
+    if (data.isRunning) {
+        statusEl.innerHTML = `<span style="color:#FF9500">${i18n.get('status_checking')}</span>`;
+
+    } else if (data.lastStatus === "SUCCESS" || data.lastStatus === "ALREADY_DONE") {
         statusEl.innerHTML = `<span style="color:#34C759">${i18n.get('status_success')}</span>`;
 
     } else if (data.lastStatus === "FAIL" || data.lastStatus === "NOT_LOGGED_IN") {
@@ -250,6 +183,13 @@ function renderStatus(data) {
     } else {
         statusEl.innerHTML = `<span style="color:#FF9500">${i18n.get('status_waiting')}</span>`;
 
+    }
+
+    const accDaysEl = document.getElementById('accDaysDisplay');
+    if (data.lastSignCount) {
+        accDaysEl.innerText = `${i18n.get('field_accumulated') || 'Accumulated'}: ${data.lastSignCount}${i18n.get('val_days') || 'Days'}`;
+    } else {
+        accDaysEl.innerText = "";
     }
 
     timeEl.innerText = data.lastCheckTime ? `${i18n.get('last_run_prefix')}${data.lastCheckTime}` : `${i18n.get('last_run_prefix')}-`;
@@ -269,6 +209,7 @@ function renderLogs(logs) {
         div.className = "log-item";
         let statusText = log.status;
         if (log.status === 'SUCCESS') statusText = i18n.get('status_success');
+        else if (log.status === 'ALREADY_DONE') statusText = i18n.get('status_success');
         else if (log.status === 'FAIL') statusText = i18n.get('status_fail');
 
         div.innerHTML = `
@@ -280,57 +221,6 @@ function renderLogs(logs) {
         `;
         list.appendChild(div);
     });
-}
-
-function renderAccountInfo(info) {
-    const el = document.getElementById('userInfo');
-    const btnSync = document.getElementById('btnSync');
-    const btnUnlink = document.getElementById('btnUnlink');
-
-    const newBtnUnlink = btnUnlink.cloneNode(true);
-    btnUnlink.parentNode.replaceChild(newBtnUnlink, btnUnlink);
-
-    newBtnUnlink.addEventListener('click', async () => {
-        const confirmed = await Modal.confirm(i18n.get('msg_unlink_confirm'));
-        if (!confirmed) return;
-
-        chrome.runtime.sendMessage({ action: "logout" }, async (res) => {
-            if (chrome.runtime.lastError) {
-                await Modal.alert(i18n.get('err_prefix') + chrome.runtime.lastError.message);
-                return;
-            }
-            if (res && res.code === "SUCCESS") {
-                await Modal.alert(i18n.get('msg_unlinked'));
-                renderAccountInfo(null);
-                storage.get(['checkInLogs'], (d) => renderLogs(d.checkInLogs));
-            }
-        });
-    });
-
-    if (info && info.cred && info.role) {
-        let accountInfoText = "";
-
-        if (info.uid && info.uid !== "Linked") {
-            accountInfoText = `<div style="margin-top:4px; font-size:12px; color:#D4D94A; font-weight:500;">UID: ${info.uid}</div>`;
-        }
-        else if (typeof info.role === 'string') {
-            const parts = info.role.split('_');
-            if (parts.length >= 3) {
-                const roleId = parts[1];
-                accountInfoText = `<div style="margin-top:4px; font-size:12px; color:#D4D94A; font-weight:500;">UID: ${roleId}</div>`;
-            } else {
-                accountInfoText = `<div style="margin-top:4px; font-size:12px; color:#D4D94A; font-weight:500;">UID: ${info.role}</div>`;
-            }
-        }
-
-        el.innerHTML = `${i18n.get('info_linked')} <span style="color:#34C759">●</span>${accountInfoText}<br><span style="font-size:10px;color:#888; font-weight:400">${i18n.get('last_edit')}${info.lastSync}</span>`;
-        btnSync.innerText = i18n.get('btn_sync_refresh');
-        newBtnUnlink.style.display = "block";
-    } else {
-        el.innerHTML = `${i18n.get('info_not_linked')} <span style="color:#FF3B30">●</span><br><span style="font-size:10px;color:#888; font-weight:400">${i18n.get('info_msg_not_found')}</span>`;
-        btnSync.innerText = i18n.get('btn_sync_start');
-        newBtnUnlink.style.display = "none";
-    }
 }
 
 async function handleSaveWebhook() {
@@ -359,8 +249,6 @@ async function handleSaveWebhook() {
     renderDiscordConfig(config);
 }
 
-
-
 async function handleTestWebhook() {
     const webhookUrl = document.getElementById('webhookUrl').value.trim();
 
@@ -369,7 +257,7 @@ async function handleTestWebhook() {
         return;
     }
 
-    const data = await storage.get(['discordConfig', 'accountInfo']);
+    const data = await storage.get(['discordConfig']);
     const config = data.discordConfig || {};
 
     const testType = await showTestTypeModal();
@@ -398,7 +286,6 @@ async function handleTestWebhook() {
         btn.disabled = false;
     }
 }
-
 
 function showTestTypeModal() {
     return new Promise((resolve) => {
@@ -468,63 +355,6 @@ function showLanguageModal() {
         document.getElementById('langZh').onclick = () => close('zh');
         document.getElementById('langCancel').onclick = () => close(null);
     });
-}
-
-function createTestEmbed(type, accountInfo) {
-    const now = new Date();
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const kstDate = new Date(utc + (3600000 * 9));
-
-    const year = kstDate.getFullYear();
-    const month = String(kstDate.getMonth() + 1).padStart(2, '0');
-    const day = String(kstDate.getDate()).padStart(2, '0');
-    const hours = String(kstDate.getHours()).padStart(2, '0');
-    const minutes = String(kstDate.getMinutes()).padStart(2, '0');
-    const dateTimeStr = `${year}-${month}-${day} ${hours}:${minutes}`;
-
-    const randomDays = Math.floor(Math.random() * 30) + 1;
-
-    const footerText = (accountInfo && accountInfo.uid)
-        ? `UID: ${accountInfo.uid}`
-        : i18n.get('footer_text');
-    if (type === 'SUCCESS') {
-        return {
-            title: i18n.get('embed_test_success_title'),
-            color: 13883715,
-            fields: [
-                { name: i18n.get('field_date'), value: dateTimeStr, inline: false },
-                { name: i18n.get('field_accumulated'), value: `${randomDays}${i18n.get('val_days')}`, inline: true },
-                { name: i18n.get('field_reward'), value: `${i18n.get('val_test_item')} x1`, inline: true }
-            ],
-            thumbnail: {
-                url: "https://img.icons8.com/color/96/gift--v1.png"
-            },
-            footer: { text: footerText },
-            timestamp: now.toISOString()
-        };
-    } else if (type === 'ALREADY_DONE') {
-        return {
-            title: i18n.get('embed_test_already_title'),
-            color: 3447003,
-            fields: [
-                { name: i18n.get('field_date'), value: dateTimeStr, inline: false },
-                { name: i18n.get('field_status'), value: i18n.get('val_already_msg'), inline: false }
-            ],
-            footer: { text: footerText },
-            timestamp: now.toISOString()
-        };
-    } else {
-        return {
-            title: i18n.get('embed_test_fail_title'),
-            color: 16711680,
-            fields: [
-                { name: i18n.get('field_date'), value: dateTimeStr, inline: false },
-                { name: i18n.get('field_error'), value: i18n.get('val_test_error'), inline: false }
-            ],
-            footer: { text: footerText },
-            timestamp: now.toISOString()
-        };
-    }
 }
 
 function renderDiscordConfig(config) {

@@ -1,874 +1,472 @@
 importScripts('i18n.js');
 
-const TARGET_DOMAINS = ["skport.com", "game.skport.com", "gryphline.com"];
-const ALARM_NAME = "dailyCheckIn";
-
-class AccountStore {
-    async get(key) {
-        const data = await chrome.storage.local.get([key]);
-        return data[key];
+const CONSTANTS = {
+    CHECK_IN_URL: "https://game.skport.com/endfield/sign-in?action=attendance_start",
+    ALARM_NAME: "endfield_daily_scheduler",
+    TIMEOUT_MS: 60000,
+    OFFSETS: {
+        KST: 9 * 60 * 60 * 1000,
+        CST: 8 * 60 * 60 * 1000
     }
-    async set(key, value) {
-        return chrome.storage.local.set({ [key]: value });
-    }
+};
 
-    async addLog(status, message) {
-        let logs = (await this.get('checkInLogs')) || [];
-        const now = new Date().toLocaleString(i18n.locale, { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
-        logs.unshift({ date: now, status: status, msg: message });
-        if (logs.length > 50) logs = logs.slice(0, 50);
-        await this.set('checkInLogs', logs);
+class AttendanceLogger {
+    async get(keys) {
+        return chrome.storage.local.get(keys);
     }
 
-    async saveAccount(info) { await this.set('accountInfo', info); }
-    async getAccount() { return await this.get('accountInfo'); }
-    async isAutoRunActive() { return true; }
-
-    async saveResult(status, date, time) {
-        const uiStatus = (status === "ALREADY_DONE") ? "SUCCESS" : status;
-        await this.set('lastStatus', uiStatus);
-        await this.set('lastCheckDate', date);
-        await this.set('lastCheckTime', time);
-        await this.set('isRunning', false);
+    async set(items) {
+        return chrome.storage.local.set(items);
     }
 
-    async getDeviceId() {
-        let dId = await this.get('dId');
-        if (!dId) {
-            dId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-            await this.set('dId', dId);
+    async log(status, message) {
+        const now = new Date();
+        const logEntry = {
+            date: now.toLocaleString('ko-KR'),
+            status: status,
+            msg: message,
+            timestamp: now.getTime()
+        };
+
+        const data = await this.get('checkInLogs');
+        const logs = data.checkInLogs || [];
+        logs.unshift(logEntry);
+
+        if (logs.length > 50) {
+            logs.pop();
         }
-        return dId;
-    }
 
-    async getDiscordConfig() { return await this.get('discordConfig'); }
-    async setDiscordConfig(config) { await this.set('discordConfig', config); }
+        const updatePatch = {
+            checkInLogs: logs,
+            lastLog: message
+        };
 
-    async addDiscordLog(status, message) {
-        let logs = (await this.get('discordLogs')) || [];
-        const now = new Date().toLocaleString(i18n.locale, { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
-        logs.unshift({ date: now, status: status, msg: message });
-        if (logs.length > 20) logs = logs.slice(0, 20);
-        await this.set('discordLogs', logs);
-    }
-
-    async shouldSendDiscordNotification(serverDate) {
-        const lastSent = await this.get('lastDiscordSentDate');
-        return lastSent !== serverDate;
-    }
-
-    async markDiscordSent(serverDate) {
-        await this.set('lastDiscordSentDate', serverDate);
-    }
-
-    async updateCredential(newCred, newCookies) {
-        const info = await this.getAccount();
-        if (info) {
-            info.cred = newCred;
-            if (newCookies) {
-                info.cookies = newCookies;
-            }
-            info.lastSync = new Date().toLocaleString(i18n.locale);
-            await this.saveAccount(info);
-            return true;
+        if (['SUCCESS', 'ALREADY_DONE', 'FAIL'].includes(status)) {
+            updatePatch.lastStatus = status;
         }
-        return false;
+
+        await this.set(updatePatch);
+    }
+
+    async recordSuccess(date, time, count, status) {
+        await this.set({
+            lastSuccessDate: date,
+            lastCheckDate: date,
+            lastCheckTime: time,
+            lastSignCount: count,
+            lastStatus: status,
+            isRunning: false
+        });
+        await this.updateBadge('', '#34C759');
+    }
+
+    async recordFailure(date, time) {
+        await this.set({
+            lastCheckDate: date,
+            lastCheckTime: time,
+            lastStatus: 'FAIL',
+            isRunning: false
+        });
+        await this.updateBadge('X', '#FF3B30');
+    }
+
+    async resetRunningState() {
+        await this.set({ isRunning: true });
+        await this.updateBadge('...', '#FF9500');
+    }
+
+    async updateBadge(text, color) {
+        await chrome.action.setBadgeText({ text });
+        await chrome.action.setBadgeBackgroundColor({ color });
     }
 }
 
-class CheckInService {
-    constructor(store) { this.store = store; }
-
-    getServerTodayString() {
-        const now = new Date();
-        const utc8Time = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3600000 * 8));
-        return utc8Time.toISOString().split('T')[0];
+class NotificationService {
+    constructor(logger) {
+        this.logger = logger;
     }
 
-    async getHeaders(cred, role) {
-        let langHeader = "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7";
-        let skLang = "ko";
+    async getConfig() {
+        const data = await this.logger.get('discordConfig');
+        return data.discordConfig || { webhookUrl: "" };
+    }
 
-        if (i18n.lang === 'en') {
-            langHeader = "en-US,en;q=0.9,ko-KR;q=0.8,ko;q=0.7";
-            skLang = "en";
-        } else if (i18n.lang === 'ja') {
-            langHeader = "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7";
-            skLang = "ja";
-        } else if (i18n.lang === 'zh') {
-            langHeader = "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7";
-            skLang = "zh-cn";
+    async send(data, dateStr, options = { force: false }) {
+        this.config = await this.getConfig();
+
+        if (!this.isValidWebhook()) {
+            return;
         }
 
-        const headers = {
-            "accept": "application/json, text/plain, */*",
-            "accept-encoding": "gzip, deflate, br, zstd",
-            "accept-language": langHeader,
-            "origin": "https://game.skport.com",
-            "referer": "https://game.skport.com/",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "platform": "3",
-            "sk-language": skLang
-        };
-
-        if (cred) headers["cred"] = cred;
-        return headers;
-    }
-
-    async getAllCookies() {
-        let allCookies = [];
-        for (const domain of TARGET_DOMAINS) {
-            try {
-                const cookies = await chrome.cookies.getAll({ domain: domain });
-                allCookies = allCookies.concat(cookies);
-            } catch (e) { }
+        if (await this.shouldSkipNotification(dateStr, options.force)) {
+            return;
         }
-        return allCookies;
-    }
 
-    findCredInCookies(cookies) {
-        const targets = ['SK_OAUTH_CRED_KEY', 'cred', 'sk_cred'];
-        for (const t of targets) {
-            const found = cookies.find(c => c.name === t);
-            if (found && found.value) return found.value;
+        if (await this.shouldSkipNotification(dateStr, options.force)) {
+            return;
         }
-        return null;
+
+        const embed = this.createEmbed(data);
+        await this.dispatchWebhook(embed);
+        await this.updateLastSent(dateStr);
     }
 
-    async fetchGameRole(cred) {
-        try {
-            const headers = await this.getHeaders(cred, null);
-            const url = "https://zonai.skport.com/api/v1/game/player/binding?gameId=3";
+    isValidWebhook() {
+        return this.config.webhookUrl && this.config.webhookUrl.startsWith("http");
+    }
 
-            const response = await fetch(url, {
-                method: "GET",
-                headers: headers
-            });
-            const data = await response.json();
+    async shouldSkipNotification(dateStr, force) {
+        if (force) return false;
 
-            if (data.code === 0 && data.data?.list?.[0]?.bindingList?.[0]?.roles?.[0]) {
-                const roleData = data.data.list[0].bindingList[0].roles[0];
-                return {
-                    roleValue: `3_${roleData.roleId}_${roleData.serverId}`,
-                    roleId: roleData.roleId,
-                    server: roleData.serverId
-                };
-            }
-            return null;
-        } catch (e) {
-            console.error("Fetch Role Error:", e);
-            return null;
+        const data = await this.logger.get('lastDiscordSentDate');
+        return data.lastDiscordSentDate === dateStr;
+    }
+
+    createEmbed(data) {
+        const isSuccess = data.status === "SUCCESS";
+        const isAlreadyDone = data.status === "ALREADY_DONE";
+        const isFail = data.status === "FAIL";
+
+        let titleKey = 'embed_fail_title';
+        let color = 15548997;
+
+        if (isSuccess) {
+            titleKey = 'embed_success_title';
+            color = 5763719;
+        } else if (isAlreadyDone) {
+            titleKey = 'embed_already_title';
+            color = 3447003;
         }
-    }
-
-    async refreshSession(cred) {
-        try {
-            const url = "https://game.skport.com/endfield/sign-in";
-            await fetch(url, {
-                method: "GET",
-                headers: await this.getHeaders(cred, null)
-            });
-        } catch (e) {
-        }
-    }
-
-    async syncAccountData(localStorageData) {
-        try {
-            const cookies = await this.getAllCookies();
-            let cred = localStorageData?.cred || this.findCredInCookies(cookies);
-
-            if (!cred) {
-                throw new Error(i18n.get('err_login_not_found'));
-            }
-
-            if (cred) {
-                cred = decodeURIComponent(cred).replace(/^"|"$/g, '');
-            }
-
-            const roleData = await this.fetchGameRole(cred);
-            if (!roleData) {
-                return { code: "FAIL", msg: i18n.get('err_char_not_found_desc') };
-            }
-
-            const accountInfo = {
-                uid: roleData.roleId,
-                cred: cred,
-                role: roleData.roleValue,
-                cookies: cookies,
-                lastSync: new Date().toLocaleString(i18n.locale)
-            };
-
-            await this.store.saveAccount(accountInfo);
-            return { code: "SUCCESS", data: accountInfo };
-
-        } catch (e) {
-            return { code: "FAIL", msg: e.message };
-        }
-    }
-
-    async executeAttendance() {
-        try {
-            const account = await this.store.getAccount();
-            if (!account || !account.cred) return { code: "NOT_LOGGED_IN", msg: i18n.get('log_req_login') };
-
-            await this.refreshSession(account.cred);
-
-            let role = account.role;
-            if (!role || !account.uid) {
-                const roleData = await this.fetchGameRole(account.cred);
-                if (roleData) {
-                    account.role = roleData.roleValue;
-                    account.uid = roleData.roleId;
-                    await this.store.saveAccount(account);
-                    role = account.role;
-                }
-            }
-
-            if (!role) {
-                return { code: "FAIL", msg: i18n.get('log_char_not_found') };
-            }
-
-            const url = "https://zonai.skport.com/web/v1/game/endfield/attendance";
-            const commonHeaders = await this.getHeaders(account.cred, null);
-            const headers = { ...commonHeaders, "sk-game-role": role };
-
-            const checkRes = await fetch(url, { method: "GET", headers: headers });
-            const checkData = await checkRes.json();
-
-            if (checkData.code === 0 && checkData.data?.hasToday) {
-                return { code: "ALREADY_DONE", msg: i18n.get('log_check_already'), rawData: checkData };
-            }
-
-            const postRes = await fetch(url, {
-                method: "POST",
-                headers: { ...headers, "content-type": "application/json" },
-                body: JSON.stringify({})
-            });
-            const postData = await postRes.json();
-
-            if (postData.code === 0 || postData.code === 10001) {
-                try {
-                    const afterRes = await fetch(url, { method: "GET", headers: headers });
-                    const afterData = await afterRes.json();
-                    if (afterData.code === 0 && afterData.data) {
-                        return { code: "SUCCESS", msg: i18n.get('log_check_success'), rawData: afterData };
-                    }
-                } catch (e) {
-                    console.error("Failed to fetch after-check-in data:", e);
-                }
-                return { code: "SUCCESS", msg: i18n.get('log_check_success'), rawData: postData };
-            } else {
-                return { code: "FAIL", msg: postData.message || i18n.get('log_unknown_error'), rawData: postData };
-            }
-
-        } catch (e) {
-            return { code: "ERROR", msg: e.message };
-        }
-    }
-
-    async fetchAttendanceStatus() {
-        try {
-            const account = await this.store.getAccount();
-            if (!account || !account.cred) return { code: "NOT_LOGGED_IN" };
-
-            await this.refreshSession(account.cred);
-
-            let role = account.role;
-            if (!role) {
-                const roleData = await this.fetchGameRole(account.cred);
-                if (roleData) {
-                    account.role = roleData.roleValue;
-                    account.uid = roleData.roleId;
-                    await this.store.saveAccount(account);
-                    role = account.role;
-                }
-            }
-            if (!role) return { code: "FAIL", msg: i18n.get('err_no_role') };
-
-            const url = "https://zonai.skport.com/web/v1/game/endfield/attendance";
-            const headers = await this.getHeaders(account.cred, null);
-            const reqHeaders = { ...headers, "sk-game-role": role };
-
-            const res = await fetch(url, { method: "GET", headers: reqHeaders });
-            const data = await res.json();
-
-            if (data.code === 0) {
-                return { code: "SUCCESS", rawData: data };
-            }
-            return { code: "FAIL", rawData: data };
-
-        } catch (e) {
-            return { code: "ERROR", msg: e.message };
-        }
-    }
-}
-
-class DiscordWebhookService {
-    constructor(store) { this.store = store; }
-
-    async init() {
-        await this.setupNetRules();
-    }
-
-    async setupNetRules() {
-        const ruleId = 1;
-        await chrome.declarativeNetRequest.updateDynamicRules({
-            removeRuleIds: [ruleId],
-            addRules: [{
-                "id": ruleId,
-                "priority": 1,
-                "action": {
-                    "type": "modifyHeaders",
-                    "requestHeaders": [
-                        { "header": "Origin", "operation": "remove" },
-                        { "header": "Referer", "operation": "remove" }
-                    ]
-                },
-                "condition": {
-                    "urlFilter": "discord.com",
-                    "resourceTypes": ["xmlhttprequest"]
-                }
-            }]
-        });
-    }
-
-    getWebhookHeaders() {
-        return {
-            'Content-Type': 'application/json'
-        };
-    }
-
-    async sendAttendanceNotification(attendanceData, serverDate) {
-        try {
-            const config = await this.store.getDiscordConfig();
-
-            if (!config || !config.webhookUrl) {
-                return { code: "DISABLED", msg: i18n.get('log_discord_disabled') };
-            }
-
-            const shouldSend = await this.store.shouldSendDiscordNotification(serverDate);
-            if (!shouldSend) {
-                return { code: "ALREADY_SENT", msg: i18n.get('log_today_already_sent') };
-            }
-
-            const embed = await this.formatAttendanceEmbed(attendanceData, serverDate);
-            const response = await fetch(config.webhookUrl, {
-                method: 'POST',
-                headers: this.getWebhookHeaders(),
-                referrerPolicy: 'no-referrer',
-                body: JSON.stringify({ embeds: [embed] })
-            });
-
-            if (response.ok) {
-                await this.store.markDiscordSent(serverDate);
-                await this.store.addDiscordLog("SUCCESS", i18n.get('log_discord_sent'));
-                return { code: "SUCCESS", msg: i18n.get('log_discord_sent') };
-            } else {
-                const errorText = await response.text();
-                await this.store.addDiscordLog("FAIL", `${i18n.get('log_discord_fail')}${response.status}`);
-                return { code: "FAIL", msg: `HTTP ${response.status}: ${errorText}` };
-            }
-        } catch (error) {
-            await this.store.addDiscordLog("ERROR", error.message);
-            return { code: "ERROR", msg: error.message };
-        }
-    }
-
-    async sendErrorNotification(errorMsg) {
-        try {
-            const config = await this.store.getDiscordConfig();
-            if (!config || !config.webhookUrl) {
-                return;
-            }
-
-            const now = new Date();
-            const dateTimeStr = now.toLocaleDateString(i18n.locale, {
-                year: 'numeric', month: '2-digit', day: '2-digit'
-            });
-
-            const account = await this.store.getAccount();
-            const footerText = (account && account.uid)
-                ? `${account.uid}`
-                : i18n.get('footer_text');
-
-            const embed = {
-                title: i18n.get('embed_fail_title'),
-                color: 16711680,
-                fields: [
-                    {
-                        name: i18n.get('field_date'),
-                        value: dateTimeStr,
-                        inline: true
-                    },
-                    {
-                        name: i18n.get('field_error'),
-                        value: errorMsg,
-                        inline: false
-                    }
-                ],
-                footer: {
-                    text: footerText
-                },
-                timestamp: now.toISOString()
-            };
-
-            await fetch(config.webhookUrl, {
-                method: 'POST',
-                headers: this.getWebhookHeaders(),
-                referrerPolicy: 'no-referrer',
-                body: JSON.stringify({ embeds: [embed] })
-            });
-        } catch (e) {
-            console.error("Error sending error notification:", e);
-        }
-    }
-
-    async sendAlreadyDoneNotification(result) {
-        try {
-            const config = await this.store.getDiscordConfig();
-            if (!config || !config.webhookUrl) {
-                return;
-            }
-
-            const now = new Date();
-            const kstTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3600000 * 9));
-            const serverDate = kstTime.toISOString().split('T')[0];
-
-            const embed = await this.formatAttendanceEmbed(result, serverDate, {
-                title: i18n.get('embed_already_title'),
-                color: 3447003
-            });
-
-            await fetch(config.webhookUrl, {
-                method: 'POST',
-                headers: this.getWebhookHeaders(),
-                referrerPolicy: 'no-referrer',
-                body: JSON.stringify({ embeds: [embed] })
-            });
-
-            await this.store.addDiscordLog("SUCCESS", i18n.get('log_already_sent'));
-        } catch (e) {
-            console.error("Error sending already done notification:", e);
-        }
-    }
-
-    async formatAttendanceEmbed(data, serverDate, options = {}) {
-        const now = new Date();
-        const dateTimeStr = now.toLocaleDateString(i18n.locale, {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-
-        const account = await this.store.getAccount();
-        const footerText = (account && account.uid)
-            ? `${account.uid}`
-            : i18n.get('footer_text');
-
-        const title = options.title || i18n.get('embed_success_title');
-        const color = options.color || 13883715;
 
         const embed = {
-            title: title,
+            title: i18n.get(titleKey),
             color: color,
             fields: [
                 {
                     name: i18n.get('field_date'),
-                    value: dateTimeStr,
+                    value: new Date().toLocaleString(),
                     inline: true
                 }
             ],
             footer: {
-                text: footerText
+                text: i18n.get('footer_text')
             },
-            timestamp: now.toISOString()
+            timestamp: new Date().toISOString()
         };
 
-        if (data && data.rawData && data.rawData.data) {
-            const apiData = data.rawData.data;
-            let rewardName = "";
-            let rewardCount = "";
-            let rewardIcon = "";
-
-            if (apiData.calendar) {
-                let targetItem = null;
-                let calculatedSignCount = 0;
-
-                const doneItems = apiData.calendar.filter(item => item.done === true);
-
-                if (options.isTest) {
-                    if (options.testType === 'ALREADY_DONE') {
-                        if (doneItems.length > 0) targetItem = doneItems[doneItems.length - 1];
-                    } else {
-                        if (!apiData.hasToday) {
-                            const nextItem = apiData.calendar.find(item => !item.done);
-                            if (nextItem) targetItem = nextItem;
-                            calculatedSignCount = doneItems.length + 1;
-                        } else {
-                            if (doneItems.length > 0) targetItem = doneItems[doneItems.length - 1];
-                            calculatedSignCount = doneItems.length;
-                        }
-                    }
-
-                    if (!calculatedSignCount) calculatedSignCount = doneItems.length;
-                }
-                else {
-                    if (doneItems.length > 0) {
-                        targetItem = doneItems[doneItems.length - 1];
-                    }
-                    calculatedSignCount = doneItems.length;
-                }
-
-                if (targetItem && apiData.resourceInfoMap && targetItem.awardId) {
-                    const info = apiData.resourceInfoMap[targetItem.awardId];
-                    if (info) {
-                        rewardName = info.name ? info.name.split('|')[0] : i18n.get('val_unknown_reward');
-                        rewardCount = info.count;
-                        rewardIcon = info.icon;
-                    }
-                }
-
-                if (calculatedSignCount > 0) {
-                    embed.fields.push({
-                        name: i18n.get('field_accumulated'),
-                        value: `${calculatedSignCount}${i18n.get('val_days')}`,
-                        inline: true
-                    });
-                }
-            }
-            else {
-                const signCount = apiData.signCount || apiData.sign_count || apiData.totalSignCount || apiData.currentSignCount;
-                if (signCount !== undefined) {
-                    embed.fields.push({
-                        name: i18n.get('field_accumulated'),
-                        value: `${signCount}${i18n.get('val_days')}`,
-                        inline: true
-                    });
-                }
-
-                if (apiData.rewards && apiData.rewards.length > 0) {
-                    const r = apiData.rewards[0];
-                    rewardName = r.name;
-                    rewardCount = r.count;
-                    rewardIcon = r.icon;
-                }
-            }
-
-            if (rewardName) {
-                let rewardText = rewardName;
-                if (rewardCount) {
-                    rewardText += ` x${rewardCount}`;
-                }
-
+        if (isSuccess) {
+            embed.fields.push({
+                name: i18n.get('field_status'),
+                value: i18n.get('val_success_msg'),
+                inline: false
+            });
+            if (data.rewardName) {
                 embed.fields.push({
                     name: i18n.get('field_reward'),
-                    value: rewardText,
+                    value: data.rewardName,
                     inline: true
                 });
-
-                if (rewardIcon) {
-                    embed.thumbnail = {
-                        url: rewardIcon
-                    };
-                }
             }
-        }
-        else if (options.isTest) {
+            if (data.rewardImage) {
+                embed.thumbnail = { url: data.rewardImage };
+            }
+        } else if (isAlreadyDone) {
             embed.fields.push({
-                name: i18n.get('field_accumulated'),
-                value: `99${i18n.get('val_days')}`,
-                inline: true
+                name: i18n.get('field_status'),
+                value: i18n.get('val_already_msg'),
+                inline: false
             });
+            if (data.rewardName) {
+                embed.fields.push({
+                    name: i18n.get('field_reward'),
+                    value: data.rewardName,
+                    inline: true
+                });
+            }
+            if (data.rewardImage) {
+                embed.thumbnail = { url: data.rewardImage };
+            }
+        } else if (isFail) {
             embed.fields.push({
-                name: i18n.get('field_reward'),
-                value: `${i18n.get('val_test_item')} x1`,
-                inline: true
+                name: i18n.get('field_error'),
+                value: data.error || "Unknown Error",
+                inline: false
             });
         }
 
         return embed;
     }
 
-    async generateTestEmbed(type) {
-        const config = await this.store.getDiscordConfig();
-        if (!config || !config.webhookUrl) return { code: "FAIL", msg: i18n.get('err_no_webhook') };
-
-        let resultData = { code: "TEST_MODE", rawData: {} };
-        const fetched = await controller.service.fetchAttendanceStatus();
-
-        if (fetched.code === "SUCCESS") {
-            resultData.rawData = fetched.rawData;
-        } else {
-            resultData.rawData = {};
-        }
-
-        const now = new Date();
-        const dateTimeStr = now.toLocaleDateString(i18n.locale, {
-            year: 'numeric', month: '2-digit', day: '2-digit'
-        });
-
-        let embed;
-        if (type === 'SUCCESS') {
-            embed = await this.formatAttendanceEmbed(resultData, "", {
-                title: i18n.get('embed_test_success_title'),
-                color: 13883715,
-                isTest: true,
-                testType: 'SUCCESS'
-            });
-        } else if (type === 'ALREADY_DONE') {
-            embed = await this.formatAttendanceEmbed(resultData, "", {
-                title: i18n.get('embed_test_already_title'),
-                color: 3447003,
-                isTest: true,
-                testType: 'ALREADY_DONE'
-            });
-        } else {
-            embed = {
-                title: i18n.get('embed_test_fail_title'),
-                color: 16711680,
-                fields: [
-                    {
-                        name: i18n.get('field_date'),
-                        value: dateTimeStr,
-                        inline: true
-                    },
-                    {
-                        name: i18n.get('field_error'),
-                        value: i18n.get('val_test_error'),
-                        inline: false
-                    }
-                ],
-                footer: { text: i18n.get('footer_text') },
-                timestamp: now.toISOString()
-            };
-        }
-
-        return { code: "SUCCESS", embed: embed };
-    }
-
-    async sendTestWebhook(testType) {
+    async dispatchWebhook(embed) {
         try {
-            const config = await this.store.getDiscordConfig();
-            if (!config || !config.webhookUrl) {
-                return { code: "FAIL", msg: i18n.get('err_no_webhook') };
-            }
-
-            const genResult = await this.generateTestEmbed(testType);
-            if (genResult.code !== "SUCCESS" || !genResult.embed) {
-                return { code: "FAIL", msg: genResult.msg || "Failed to generate embed" };
-            }
-
-            const response = await fetch(config.webhookUrl, {
+            const response = await fetch(this.config.webhookUrl, {
                 method: 'POST',
-                headers: this.getWebhookHeaders(),
-                body: JSON.stringify({ embeds: [genResult.embed] })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    embeds: [embed]
+                })
             });
 
-            if (response.ok) {
-                return { code: "SUCCESS" };
-            } else {
-                const errorText = await response.text();
-                return { code: "FAIL", msg: `HTTP ${response.status}: ${errorText}` };
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
+
+            await this.logger.log("DISCORD", i18n.get('log_discord_sent'));
         } catch (error) {
-            return { code: "ERROR", msg: error.message };
-        }
-    }
-}
-
-class CheckInController {
-    constructor() {
-        this.store = new AccountStore();
-        this.service = new CheckInService(this.store);
-        this.discordService = new DiscordWebhookService(this.store);
-    }
-    async init() {
-        await this.discordService.init();
-        this.registerListeners();
-
-        await i18n.init();
-        this.scheduleNextRun();
-        this.checkOnStartup();
-    }
-
-    registerListeners() {
-        chrome.alarms.onAlarm.addListener(async (alarm) => {
-            await i18n.init();
-            if (alarm.name === ALARM_NAME) {
-                this.run(false);
-            }
-        });
-
-        chrome.runtime.onStartup.addListener(async () => {
-            await i18n.init();
-            this.checkOnStartup();
-        });
-
-        chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-            (async () => {
-                await i18n.init();
-                if (msg.action === "manualRun") {
-                    this.run(true);
-                    sendResponse({ code: "STARTED" });
-                }
-                else if (msg.action === "syncAccount") {
-                    this.service.syncAccountData(msg.storageData).then(async res => {
-                        if (res.code === "SUCCESS") {
-                            this.store.addLog("SYNC", i18n.get('log_sync_success'));
-                            const result = await this.service.executeAttendance();
-                            this.handleResult(result);
-                        }
-                        else this.store.addLog("ERROR", res.msg);
-                        sendResponse(res);
-                    });
-                }
-                else if (msg.action === "logout") {
-                    this.store.set('accountInfo', null).then(() => {
-                        this.store.addLog("LOGOUT", i18n.get('log_logout'));
-                        sendResponse({ code: "SUCCESS" });
-                    });
-                }
-                else if (msg.action === "resetData") {
-                    this.resetAllData().then(() => {
-                        sendResponse({ code: "SUCCESS" });
-                    });
-                }
-                else if (msg.action === "generateTestEmbed") {
-                    const result = await this.discordService.generateTestEmbed(msg.testType);
-                    sendResponse(result);
-                }
-                else if (msg.action === "sendTestWebhook") {
-                    const result = await this.discordService.sendTestWebhook(msg.testType);
-                    sendResponse(result);
-                }
-                else {
-                    sendResponse({ code: "IGNORED" });
-                }
-            })();
-            return true;
-        });
-
-        this.initCookieListener();
-    }
-
-    getNextRunTime() {
-        const now = new Date();
-        const nextRun = new Date(now);
-        nextRun.setHours(1, 5, 0, 0);
-
-        if (now >= nextRun) {
-            nextRun.setDate(nextRun.getDate() + 1);
-        }
-        return nextRun.getTime();
-    }
-
-    scheduleNextRun() {
-        const nextRunTime = this.getNextRunTime();
-
-        chrome.alarms.clear(ALARM_NAME, () => {
-            chrome.alarms.create(ALARM_NAME, {
-                when: nextRunTime,
-                periodInMinutes: 1440
-            });
-        });
-    }
-
-    async checkOnStartup() {
-        const now = new Date();
-        const todayTarget = new Date();
-        todayTarget.setHours(1, 5, 0, 0);
-
-        if (now > todayTarget) {
-            await this.run(false);
+            await this.logger.log("DISCORD_FAIL", `${i18n.get('log_discord_fail')} ${error.message}`);
         }
     }
 
-    initCookieListener() {
-        chrome.cookies.onChanged.addListener(async (changeInfo) => {
-            if (changeInfo.removed) return;
-
-            const domain = changeInfo.cookie.domain;
-            const isTargetDomain = TARGET_DOMAINS.some(d => domain.includes(d));
-            if (!isTargetDomain) return;
-
-            await i18n.init();
-
-            const name = changeInfo.cookie.name;
-            const value = changeInfo.cookie.value;
-
-            const isTargetCookie = ['SK_OAUTH_CRED_KEY', 'cred', 'sk_cred'].includes(name);
-
-            if (isTargetCookie) {
-                const allCookies = await this.service.getAllCookies();
-                const updated = await this.store.updateCredential(value, allCookies);
-
-                if (updated) {
-                    this.store.addLog("INFO", i18n.get('log_cookie_update'));
-                }
-            }
-        });
+    async updateLastSent(dateStr) {
+        await this.logger.set({ lastDiscordSentDate: dateStr });
     }
 
-    async run(force) {
-        const lastDate = await this.store.get('lastCheckDate');
-        const serverToday = this.service.getServerTodayString();
-        const lastStatus = await this.store.get('lastStatus');
+    async sendTest(type) {
+        this.config = await this.getConfig();
+        if (!this.isValidWebhook()) throw new Error(i18n.get('err_no_webhook'));
 
-        if (!force && lastDate === serverToday && lastStatus === "SUCCESS") {
-            this.clearBadge(); return;
-        }
+        const testData = this.getTestData(type);
+        const embed = this.createEmbed(testData);
 
-        await this.store.set('isRunning', true);
-        const result = await this.service.executeAttendance();
-        this.handleResult(result, force);
+        if (type === 'SUCCESS') embed.title = i18n.get('embed_test_success_title');
+        else if (type === 'ALREADY_DONE') embed.title = i18n.get('embed_test_already_title');
+        else embed.title = i18n.get('embed_test_fail_title');
+
+        await this.dispatchWebhook(embed);
+        return { code: "SUCCESS" };
     }
 
-    async handleResult(result, isManual = false) {
-        const serverToday = this.service.getServerTodayString();
-        const timeString = new Date().toLocaleTimeString(i18n.locale, { hour: '2-digit', minute: '2-digit' });
-
-        await this.store.addLog(result.code, result.msg);
-
-        if (result.code === "SUCCESS" || result.code === "ALREADY_DONE") {
-            this.clearBadge();
-            await this.store.saveResult("SUCCESS", serverToday, timeString);
-
-            if (result.code === "SUCCESS") {
-                await this.discordService.sendAttendanceNotification(result, serverToday);
-            } else if (result.code === "ALREADY_DONE" && isManual) {
-                await this.discordService.sendAlreadyDoneNotification(result);
-            }
+    getTestData(type) {
+        if (type === 'SUCCESS') {
+            return { status: "SUCCESS", rewardName: `${i18n.get('val_test_item')} x1`, signCount: 99, rewardImage: "https://game.skport.com/favicon.ico" };
+        } else if (type === 'ALREADY_DONE') {
+            return { status: "ALREADY_DONE", signCount: 99 };
         } else {
-            this.setBadgeX();
-            await this.store.saveResult("FAIL", serverToday, timeString);
-
-            await this.discordService.sendErrorNotification(result.msg || i18n.get('log_check_fail'));
+            return { status: "FAIL", error: i18n.get('val_test_error') };
         }
-    }
-
-    clearBadge() { chrome.action.setBadgeText({ text: "" }); }
-    setBadgeX() { chrome.action.setBadgeText({ text: "X" }); chrome.action.setBadgeBackgroundColor({ color: "#FF3B30" }); }
-
-    async resetAllData() {
-        await chrome.storage.local.clear();
-        for (const domain of TARGET_DOMAINS) {
-            try {
-                const cookies = await chrome.cookies.getAll({ domain: domain });
-                for (const cookie of cookies) {
-                    const protocol = cookie.secure ? "https:" : "http:";
-                    let domain = cookie.domain;
-                    if (domain.startsWith('.')) domain = domain.substring(1);
-                    const url = `${protocol}//${domain}${cookie.path}`;
-                    await chrome.cookies.remove({ url: url, name: cookie.name, storeId: cookie.storeId });
-                }
-            } catch (e) { }
-        }
-        this.clearBadge();
     }
 }
 
-const controller = new CheckInController();
-controller.init();
+class AttendanceExecutor {
+    constructor(logger, notifier) {
+        this.logger = logger;
+        this.notifier = notifier;
+        this.activeTabId = null;
+    }
+
+    async execute(isManual = false) {
+        await this.prepareExecution(isManual);
+
+        try {
+            await this.createHiddenTab();
+        } catch (error) {
+            await this.handleExecutionError(error);
+        }
+    }
+
+    async prepareExecution(isManual) {
+        if (this.activeTabId) {
+            if (isManual) {
+                this.closeTab();
+                await this.wait(500);
+            } else {
+                return;
+            }
+        }
+
+        if (isManual) {
+            await this.logger.set({ manualRunPending: true });
+        }
+
+        await this.logger.resetRunningState();
+        await this.logger.log("START", i18n.get('log_start_checkin'));
+    }
+
+    async createHiddenTab() {
+        const tab = await chrome.tabs.create({
+            url: CONSTANTS.CHECK_IN_URL,
+            active: false
+        });
+        this.activeTabId = tab.id;
+    }
+
+    async processResult(result) {
+        if (result.message === "LOGIN_REQUIRED") {
+            await this.handleLoginRequired();
+            return;
+        }
+
+        this.closeTab();
+
+        const now = new Date();
+        const dates = {
+            localDate: now.toLocaleDateString(),
+            localTime: now.toLocaleTimeString(),
+            serverDate: this.getServerDate(now)
+        };
+
+        const isManual = await this.getManualFlag();
+
+        if (result.success) {
+            await this.handleSuccess(result, dates, isManual);
+        } else {
+            await this.handleFailure(result, dates, isManual);
+        }
+    }
+
+    async handleSuccess(result, dates, isManual) {
+        const status = result.alreadyDone ? "ALREADY_DONE" : "SUCCESS";
+        const msg = result.alreadyDone ? i18n.get('log_check_already') : i18n.get('log_check_success');
+
+        await this.logger.log(status, msg);
+        await this.logger.recordSuccess(dates.localDate, dates.localTime, result.signCount, status);
+
+        const notificationData = {
+            status: status,
+            signCount: result.signCount,
+            rewardName: result.rewardName,
+            rewardImage: result.rewardImage
+        };
+
+        await this.notifier.send(notificationData, dates.serverDate, { force: isManual });
+    }
+
+    async handleFailure(result, dates, isManual) {
+        const errorMsg = result.message || "Unknown Error";
+
+        await this.logger.log("FAIL", errorMsg);
+        await this.logger.recordFailure(dates.localDate, dates.localTime);
+
+        await this.notifier.send({ status: "FAIL", error: errorMsg }, dates.serverDate, { force: isManual });
+    }
+
+    closeTab() {
+        if (this.activeTabId) {
+            chrome.tabs.remove(this.activeTabId).catch(() => { });
+            this.activeTabId = null;
+        }
+    }
+
+    async handleLoginRequired() {
+        if (this.activeTabId) {
+            await chrome.tabs.update(this.activeTabId, { active: true });
+            this.activeTabId = null;
+            await this.logger.log("FAIL", i18n.get('log_req_login'));
+            await this.logger.updateBadge('!', '#FF3B30');
+        }
+    }
+
+    async handleExecutionError(error) {
+        const now = new Date();
+        await this.logger.log("ERROR", error.message);
+        await this.logger.recordFailure(now.toLocaleDateString(), now.toLocaleTimeString());
+    }
+
+    async getManualFlag() {
+        const data = await this.logger.get('manualRunPending');
+        await this.logger.set({ manualRunPending: false });
+        return data.manualRunPending;
+    }
+
+    getServerDate(date) {
+        const utc8 = new Date(date.getTime() + (date.getTimezoneOffset() * 60000) + CONSTANTS.OFFSETS.CST);
+        return utc8.toISOString().split('T')[0];
+    }
+
+    wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+
+class ApplicationController {
+    constructor() {
+        this.logger = new AttendanceLogger();
+        this.notifier = new NotificationService(this.logger);
+        this.executor = new AttendanceExecutor(this.logger, this.notifier);
+    }
+
+    async start() {
+        this.setupEventHandlers();
+        await i18n.init();
+        this.scheduleDailyTask();
+    }
+
+    setupEventHandlers() {
+        chrome.alarms.onAlarm.addListener(this.handleAlarm.bind(this));
+        chrome.runtime.onStartup.addListener(this.handleStartup.bind(this));
+        chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
+        chrome.tabs.onRemoved.addListener(this.handleTabRemoval.bind(this));
+    }
+
+    async handleAlarm(alarm) {
+        await i18n.init();
+        if (alarm.name === CONSTANTS.ALARM_NAME) {
+            this.executor.execute();
+        }
+    }
+
+    async handleStartup() {
+        await i18n.init();
+    }
+
+    handleMessage(msg, sender, sendResponse) {
+        this.processMessage(msg).then(sendResponse);
+        return true;
+    }
+
+    async processMessage(msg) {
+        await i18n.init();
+
+        if (msg.action === "manualRun") {
+            await this.executor.execute(true);
+            return { code: "STARTED" };
+        }
+
+        if (msg.action === "checkInResult") {
+            await this.executor.processResult(msg.result);
+            return { code: "RECEIVED" };
+        }
+
+        if (msg.action === "resetData") {
+            await this.logger.set({
+                checkInLogs: [],
+                lastStatus: null,
+                lastCheckDate: null,
+                lastCheckTime: null
+            });
+            return { code: "SUCCESS" };
+        }
+
+        if (msg.action === "sendTestWebhook") {
+            return await this.notifier.sendTest(msg.testType);
+        }
+    }
+
+    handleTabRemoval(tabId) {
+        if (this.executor.activeTabId === tabId) {
+            this.executor.activeTabId = null;
+        }
+    }
+
+    scheduleDailyTask() {
+        const nextRun = this.calculateNextRunTime();
+        chrome.alarms.create(CONSTANTS.ALARM_NAME, {
+            when: nextRun,
+            periodInMinutes: 1440
+        });
+    }
+
+    calculateNextRunTime() {
+        const now = new Date();
+        const next = new Date(now);
+        next.setHours(1, 15, 0, 0);
+
+        if (now >= next) {
+            next.setDate(next.getDate() + 1);
+        }
+        return next.getTime();
+    }
+}
+
+const app = new ApplicationController();
+app.start();
